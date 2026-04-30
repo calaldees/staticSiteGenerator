@@ -8,7 +8,7 @@ example:
 test:
 	uv run pytest
 clean:
-	rm -rf .venv node_modules package-lock.json
+	rm -rf .venv node_modules package-lock.json build
 
 upgrade:
 	uv lock --upgrade

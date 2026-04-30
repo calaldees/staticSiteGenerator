@@ -6,6 +6,8 @@ version = "0.0.0"
 #   `uv lock --upgrade` or `uv lock --upgrade-package <package>`
 requires-python = ">= 3.14"
 dependencies = [
+  "mako",
+  "pyyaml",
 ]
 
 [dependency-groups]

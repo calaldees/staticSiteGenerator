@@ -1,7 +1,7 @@
 .git
 .venv
-
 node_modules
+build
 
 package-lock.json
 uv.lock
