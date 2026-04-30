@@ -1,0 +1,36 @@
+#!/usr/bin/node
+
+import { marked } from 'marked'
+
+import { markedHighlight } from "marked-highlight"
+import hljs from 'highlight.js'
+marked.use(markedHighlight({
+	emptyLangClass: 'hljs',
+    langPrefix: 'hljs language-',
+    highlight(code, lang, info) {
+      const language = hljs.getLanguage(lang) ? lang : 'plaintext';
+      return hljs.highlight(code, { language }).value;
+    }
+}))
+
+import markedAlert from 'marked-alert'
+marked.use(markedAlert())
+
+import { gfmHeadingId } from "marked-gfm-heading-id"
+marked.use(gfmHeadingId())
+
+// and `npm install mermaid`?
+//import markedMermaid from '@maddyguthridge/marked-mermaid'
+//marked.use(markedMermaid())
+// Does not seem to work?
+
+// npm install https://github.com/huaichaow/marked-toc-extension --legacy-peer-deps --omit=dev --omit=optional
+// npm install marked-toc-extension
+// https://github.com/huaichaow/marked-toc-extension
+import tocExtension from 'markdown-toc-extension'
+marked.use(tocExtension())
+
+
+import 'marked/bin/marked'
+// node ./myMarked -i test.md
+// node ./myMarked -i test.md > test.html
