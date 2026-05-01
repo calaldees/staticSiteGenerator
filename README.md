@@ -37,6 +37,9 @@ https://python-markdown.github.io/extensions/admonition/
 https://python-markdown.github.io/extensions/code_hilite/
 https://github.com/Python-Markdown/markdown/wiki/Third-Party-Extensions
 
+https://pypi.org/project/python-frontmatter/
+pip install python-frontmatter
+
 ### Mermaid
 
 https://mermaid.js.org/config/usage.html#simple-full-example

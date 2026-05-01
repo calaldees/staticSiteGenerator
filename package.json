@@ -5,7 +5,6 @@
     "marked-alert": "^2.1.2",
     "marked-gfm-heading-id": "^4.1.4",
     "marked-highlight": "^2.2.4",
-    "marked-toc-extension": "^3.5.0",
     "zero-md": "^3.1.7"
   }
 }

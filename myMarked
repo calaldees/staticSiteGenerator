@@ -27,8 +27,8 @@ marked.use(gfmHeadingId())
 // npm install https://github.com/huaichaow/marked-toc-extension --legacy-peer-deps --omit=dev --omit=optional
 // npm install marked-toc-extension
 // https://github.com/huaichaow/marked-toc-extension
-import tocExtension from 'markdown-toc-extension'
-marked.use(tocExtension())
+//import tocExtension from 'markdown-toc-extension'
+//marked.use(tocExtension())
 
 
 import 'marked/bin/marked'

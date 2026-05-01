@@ -3,4 +3,6 @@
 node_modules
 build
 
+package-lock.json
+
 *.py[cod]
