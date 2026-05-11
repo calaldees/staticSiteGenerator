@@ -30,5 +30,7 @@
 
 <h1>Static Site Generator</h1>
 
+${markdown_html}
+
 </body>
 </html>

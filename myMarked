@@ -31,6 +31,15 @@ marked.use(gfmHeadingId())
 //marked.use(tocExtension())
 
 
+// Cant use pipe .. makes me sad ..
 import 'marked/bin/marked'
-// node ./myMarked -i test.md
+// node ./myMarked -i content/test.md
 // node ./myMarked -i test.md > test.html
+
+
+// echo "# Markdown!" | node marked
+// https://github.com/markedjs/marked/blob/master/bin/marked.js
+//import 'marked/bin/main'
+//process.title = 'marked'
+//main(process);
+// cat content/test.md | ./myMarked.js
