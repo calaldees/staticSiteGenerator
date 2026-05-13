@@ -5,7 +5,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<%include file="_og_meta.mako"/>
 
-	<title>${title}</title>
+	<title>${metadata.title}</title>
 	<link id="favicon" rel="shortcut icon" type="image/png" href="data:image/png;base64,....==" />
 
 	<!-- Styles -->

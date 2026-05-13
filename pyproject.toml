@@ -9,6 +9,7 @@ dependencies = [
   "mako",
   "pyyaml",
   "python-frontmatter",
+  "dotwiz",
 ]
 
 [dependency-groups]
