@@ -8,7 +8,7 @@ run:
 test:
 	uv run pytest
 clean:
-	rm -rf build *.pickle
+	rm -rf build metadata.*
 clean_all: clean
 	rm -rf .venv node_modules package-lock.json
 

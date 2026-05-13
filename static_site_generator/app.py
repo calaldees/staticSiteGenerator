@@ -1,31 +1,52 @@
-import pickle
-import os
-from collections.abc import Mapping
-from pathlib import Path
-import subprocess
-from typing import Any
+import datetime
+import enum
+import json
 import logging
+import os
+import pickle
+import subprocess
+from collections.abc import Mapping, MutableMapping
+from pathlib import Path
+from typing import Any
 
 import frontmatter
 import mako
 import mako.lookup
 from dotwiz import DotWiz
 
-
 log = logging.getLogger(__name__)
 
-PATH_BUILD = Path('./build')
+PATH_BUILD = Path("./build")
 PATH_BUILD.mkdir(exist_ok=True)
 
-PATH_CONTENT = Path('./content')
+PATH_CONTENT = Path("./content")
 PATH_TEMPLATES = Path("./templates")
 PATH_STATIC = Path("./static")
 template_lookup = mako.lookup.TemplateLookup(directories=(PATH_TEMPLATES, PATH_STATIC))
 
 
+class JSONObjectEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, Path):
+            return str(obj)
+        if isinstance(obj, datetime.datetime):
+            return obj.isoformat()
+        if isinstance(obj, datetime.timedelta):
+            return obj.total_seconds()
+        if isinstance(obj, set):
+            return tuple(obj)
+        if isinstance(obj, enum.Enum):
+            return "__enum__.{type}.{name}.{value}".format(
+                type=type(obj).__name__, name=obj.name, value=obj.value
+            )
+        return super().default(obj)
+
+
 def render_template(path: Path, context: Mapping[str, Any]) -> str:
     try:
-        return template_lookup.get_template(str(path.relative_to(PATH_TEMPLATES))).render(**context)
+        return template_lookup.get_template(
+            str(path.relative_to(PATH_TEMPLATES))
+        ).render(**context)
     except Exception:
         log.error(mako.exceptions.text_error_template().render())
         return ""
@@ -38,9 +59,11 @@ def render_markdown_to_html(markdown: str) -> str:
 
     Cant use pipe because I cant get the `argv` to `marked/main.js`
     """
-    temp = Path('temp.md')
+    temp = Path("temp.md")
     temp.write_text(markdown)
-    process_output = subprocess.run(("node", "./myMarked", "-i", temp), capture_output=True)
+    process_output = subprocess.run(
+        ("node", "./myMarked", "-i", temp), capture_output=True
+    )
     if process_output.returncode:
         raise Exception(process_output)
     return process_output.stdout.decode("utf8")
@@ -49,31 +72,35 @@ def render_markdown_to_html(markdown: str) -> str:
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
 
-    path_metadata_store = Path('data.pickle')
-    metadata_store: Mapping[Path, Mapping] = {}
-    if path_metadata_store.exists():
-        with path_metadata_store.open('rb') as f:
-            metadata_store = pickle.load(f)
+    path_metadata = Path("metadata.json")
+    path_metadata_db = Path("metadata.pickle")
+    metadata_db: MutableMapping[Path, Mapping] = {}
+    if path_metadata_db.exists():
+        with path_metadata_db.open("rb") as f:
+            metadata_db = pickle.load(f)
 
     # Consider fastscan of ousource + destination files?
-    for path_src in PATH_CONTENT.glob('**'):
-        if path_src.suffix != '.md' or path_src.stem.startswith('_'):
+    has_modified = False
+    for path_src in PATH_CONTENT.glob("**"):
+        if path_src.suffix != ".md" or path_src.stem.startswith("_"):
             continue
 
         path_mtime = path_src.stat().st_mtime
-        path_dst = PATH_BUILD.joinpath(path_src.relative_to(PATH_CONTENT).with_suffix('.html'))
+        path_dst = PATH_BUILD.joinpath(
+            path_src.relative_to(PATH_CONTENT).with_suffix(".html")
+        )
         path_output_mtime = path_dst.stat().st_mtime if path_dst.exists() else 0
         if path_mtime == path_output_mtime:
-            log.info(f'skipping {path_src}')
+            log.debug(f"skipping {path_src}")
             continue
 
         frontmatter_markdown = frontmatter.load(path_src)
         metadata = frontmatter_markdown.metadata
         html = render_markdown_to_html(frontmatter_markdown.content)
 
-        metadata['path_src'] = path_src.relative_to(PATH_CONTENT)
-        metadata['path_dst'] = path_dst.relative_to(PATH_BUILD)
-        metadata_store[metadata['path_src']] = metadata
+        # Augment fontmatter-metadata with additional stuff
+        metadata["path_src"] = path_src.relative_to(PATH_CONTENT)
+        metadata["path_dst"] = path_dst.relative_to(PATH_BUILD)
 
         rendered = render_template(
             Path("templates/markdown.html.mako"),
@@ -83,15 +110,22 @@ if __name__ == "__main__":
             ),
         )
         if not rendered:
-            log.error(f'Failed to render template {path_src}')
+            log.error(f"Failed to render template {path_src}")
             continue
 
+        # Write output html
         path_dst.parent.mkdir(exist_ok=True)
         path_dst.write_text(rendered)
         os.utime(path_dst, (path_mtime, path_mtime))  # Output mtime should match source
+
+        has_modified = True
+        metadata_db[metadata["path_dst"]] = metadata
         log.info(path_dst)
 
-    with path_metadata_store.open('wb') as f:
-        pickle.dump(metadata_store, f, pickle.HIGHEST_PROTOCOL)
-
-    breakpoint()
+    if has_modified:
+        log.info(f"has_modified - saving {path_metadata_db} + {path_metadata}")
+        with path_metadata_db.open("wb") as f:
+            pickle.dump(metadata_db, f)
+        with path_metadata.open("w") as f:
+            data = {str(k): v for k, v in metadata_db.items()}
+            json.dump(data, f, cls=JSONObjectEncoder)
