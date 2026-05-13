@@ -1,3 +1,4 @@
+import pickle
 import os
 from collections.abc import Mapping
 from pathlib import Path
@@ -48,34 +49,49 @@ def render_markdown_to_html(markdown: str) -> str:
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
 
+    path_metadata_store = Path('data.pickle')
+    metadata_store: Mapping[Path, Mapping] = {}
+    if path_metadata_store.exists():
+        with path_metadata_store.open('rb') as f:
+            metadata_store = pickle.load(f)
+
     # Consider fastscan of ousource + destination files?
-    for path in PATH_CONTENT.glob('**'):
-        if path.suffix != '.md' or path.stem.startswith('_'):
+    for path_src in PATH_CONTENT.glob('**'):
+        if path_src.suffix != '.md' or path_src.stem.startswith('_'):
             continue
 
-        path_mtime = path.stat().st_mtime
-        path_output = PATH_BUILD.joinpath(path.relative_to(PATH_CONTENT).with_suffix('.html'))
-        path_output_mtime = path_output.stat().st_mtime if path_output.exists() else 0
+        path_mtime = path_src.stat().st_mtime
+        path_dst = PATH_BUILD.joinpath(path_src.relative_to(PATH_CONTENT).with_suffix('.html'))
+        path_output_mtime = path_dst.stat().st_mtime if path_dst.exists() else 0
         if path_mtime == path_output_mtime:
-            log.info(f'skipping {path}')
+            log.info(f'skipping {path_src}')
             continue
 
-        frontmatter_markdown = frontmatter.load(path)
+        frontmatter_markdown = frontmatter.load(path_src)
+        metadata = frontmatter_markdown.metadata
         html = render_markdown_to_html(frontmatter_markdown.content)
 
+        metadata['path_src'] = path_src.relative_to(PATH_CONTENT)
+        metadata['path_dst'] = path_dst.relative_to(PATH_BUILD)
+        metadata_store[metadata['path_src']] = metadata
+
         rendered = render_template(
-            Path("templates/page.html.mako"),
+            Path("templates/markdown.html.mako"),
             context=dict(
-                metadata=DotWiz(frontmatter_markdown.metadata),
+                metadata=DotWiz(metadata),
                 markdown_html=html,
-                path=path,
             ),
         )
         if not rendered:
-            log.error(f'Failed to render template {path}')
+            log.error(f'Failed to render template {path_src}')
             continue
 
-        path_output.parent.mkdir(exist_ok=True)
-        path_output.write_text(rendered)
-        os.utime(path_output, (path_mtime, path_mtime))  # Output mtime should match source
-        log.info(path_output)
+        path_dst.parent.mkdir(exist_ok=True)
+        path_dst.write_text(rendered)
+        os.utime(path_dst, (path_mtime, path_mtime))  # Output mtime should match source
+        log.info(path_dst)
+
+    with path_metadata_store.open('wb') as f:
+        pickle.dump(metadata_store, f, pickle.HIGHEST_PROTOCOL)
+
+    breakpoint()
