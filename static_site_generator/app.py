@@ -21,8 +21,13 @@ PATH_BUILD.mkdir(exist_ok=True)
 
 PATH_CONTENT = Path("./content")
 PATH_TEMPLATES = Path("./templates")
-PATH_STATIC = Path("./static")
-template_lookup = mako.lookup.TemplateLookup(directories=(PATH_TEMPLATES, PATH_STATIC))
+PATHS_STATIC = (
+    Path("./static"),
+    Path("./images"),
+)
+template_lookup = mako.lookup.TemplateLookup(
+    directories=(PATH_TEMPLATES,) + PATHS_STATIC
+)
 
 
 class JSONObjectEncoder(json.JSONEncoder):
@@ -59,7 +64,7 @@ def render_markdown_to_html(markdown: str) -> str:
 
     Cant use pipe because I cant get the `argv` to `marked/main.js`
     """
-    temp = Path("temp.md")
+    temp = PATH_BUILD.joinpath("_temp.md")
     temp.write_text(markdown)
     process_output = subprocess.run(
         ("node", "./myMarked", "-i", temp), capture_output=True
@@ -99,11 +104,19 @@ if __name__ == "__main__":
         html = render_markdown_to_html(frontmatter_markdown.content)
 
         # Augment fontmatter-metadata with additional stuff
-        metadata["path_src"] = path_src.relative_to(PATH_CONTENT)
-        metadata["path_dst"] = path_dst.relative_to(PATH_BUILD)
+        metadata = (
+            {
+                "template": "markdown.html.mako",
+            }
+            | metadata
+            | {
+                "path_src": path_src.relative_to(PATH_CONTENT),
+                "path_dst": path_dst.relative_to(PATH_BUILD),
+            }
+        )
 
         rendered = render_template(
-            Path("templates/markdown.html.mako"),
+            Path("templates").joinpath(metadata["template"]),
             context=dict(
                 metadata=DotWiz(metadata),
                 markdown_html=html,
@@ -129,3 +142,13 @@ if __name__ == "__main__":
         with path_metadata.open("w") as f:
             data = {str(k): v for k, v in metadata_db.items()}
             json.dump(data, f, cls=JSONObjectEncoder)
+
+    for path_static in PATHS_STATIC:
+        if not path_static.is_dir():
+            continue
+        for path_src in path_static.iterdir():
+            path_dst = PATH_BUILD.joinpath(path_src)
+            if not path_dst.exists() or (path_dst.exists() and path_src.stat().st_mtime > path_dst.stat().st_mtime):
+                path_dst.parent.mkdir(parents=True, exist_ok=True)
+                path_src.copy(path_dst)
+                log.debug(f'static: {path_dst}')

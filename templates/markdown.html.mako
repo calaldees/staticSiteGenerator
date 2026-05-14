@@ -9,11 +9,9 @@
 	<link id="favicon" rel="shortcut icon" type="image/png" href="data:image/png;base64,....==" />
 
 	<!-- Styles -->
-
 	<link rel="stylesheet" href="static/pure-min.css">
 	<link rel="stylesheet" href="static/grids-responsive-min.css">
 	<link rel="stylesheet" href="static/page.css"/>
-
 	<%doc>
 	<style>
 	<%include file="pure-min.css"/>
@@ -23,12 +21,15 @@
 	</style>
 	</%doc>
 
+	<!-- Scripts -->
+	<script src="/static/static_site.js" async></script>
+
 	<!-- CDN -->
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/default.min.css">
 </head>
 <body>
 
-<h1>Static Site Generator</h1>
+<h1>${metadata.title}</h1>
 
 ${markdown_html}
 
