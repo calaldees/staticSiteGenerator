@@ -77,8 +77,8 @@ def render_markdown_to_html(markdown: str) -> str:
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
 
-    path_metadata = Path("metadata.json")
-    path_metadata_db = Path("metadata.pickle")
+    path_metadata = PATH_BUILD.joinpath("metadata.json")
+    path_metadata_db = PATH_BUILD.joinpath("metadata.pickle")
     metadata_db: MutableMapping[Path, Mapping] = {}
     if path_metadata_db.exists():
         with path_metadata_db.open("rb") as f:
