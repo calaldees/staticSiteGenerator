@@ -1,7 +1,7 @@
 ---
-title: "Index"
+title: "ComputingTeachers.uk"
 meta_title: ""
-description: "This is meta description"
+description: "Ideas and Resources for Teaching Computing"
 draft: false
 template: index.html.mako
 ---

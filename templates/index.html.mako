@@ -28,16 +28,14 @@
 <div id="layout" class="pure-g">
 	<div class="sidebar pure-u-1 pure-u-md-1-4">
 		<div class="header">
-			<h1 class="brand-title">Computing Teachers .uk</h1>
-			<h2 class="brand-tagline">Creating a blog layout using Pure</h2>
-			<img src="https://0.gravatar.com/avatar/1789a8006d2c2b6c6a1b85cb6dec1b4dbd1f799676bafb60e61056a08d34f5cc">
+			<h1 class="brand-title">${metadata.title}</h1>
+			<h2 class="brand-tagline">${metadata.description}</h2>
 			<%doc>${markdown_html}</%doc>
 
 			<nav class="nav">
 				<ul class="nav-list">
-					<li class="nav-item">
-						<a class="pure-button" href="http://purecss.io">Pure</a>
-					</li>
+					<li class="nav-item"><a class="pure-button" href="/authors">Authors</a></li>
+					<li class="nav-item"><a class="pure-button" href="/articles">Articles</a></li>
 				</ul>
 			</nav>
 		</div>
