@@ -47,6 +47,15 @@ class JSONObjectEncoder(json.JSONEncoder):
         return super().default(obj)
 
 
+from hashlib import sha256
+def getGravatarHash(email: str) -> str:
+  hash = sha256()
+  hash.update(email.strip().lower().encode('utf8'))
+  return hash.hexdigest()
+def getGravatarUrl(email: str) -> str:
+    return f'https://0.gravatar.com/avatar/{getGravatarHash(email)}'
+
+
 def render_template(path: Path, context: Mapping[str, Any]) -> str:
     try:
         return template_lookup.get_template(
@@ -95,7 +104,7 @@ if __name__ == "__main__":
             path_src.relative_to(PATH_CONTENT).with_suffix(".html")
         )
         path_output_mtime = path_dst.stat().st_mtime if path_dst.exists() else 0
-        if path_mtime == path_output_mtime:
+        if path_mtime == path_output_mtime:  # TODO: and built_template_mtime == template_mtime
             log.debug(f"skipping {path_src}")
             continue
 
@@ -114,9 +123,11 @@ if __name__ == "__main__":
                 "path_dst": path_dst.relative_to(PATH_BUILD),
             }
         )
+        if 'email' in metadata:
+            metadata['gravatar_url'] = getGravatarUrl(metadata['email'])
 
         rendered = render_template(
-            Path("templates").joinpath(metadata["template"]),
+            PATH_TEMPLATES.joinpath(metadata["template"]),
             context=dict(
                 metadata=DotWiz(metadata),
                 markdown_html=html,
@@ -146,7 +157,7 @@ if __name__ == "__main__":
     for path_static in PATHS_STATIC:
         if not path_static.is_dir():
             continue
-        for path_src in path_static.iterdir():
+        for path_src in path_static.glob('**'):
             path_dst = PATH_BUILD.joinpath(path_src)
             if not path_dst.exists() or (path_dst.exists() and path_src.stat().st_mtime > path_dst.stat().st_mtime):
                 path_dst.parent.mkdir(parents=True, exist_ok=True)

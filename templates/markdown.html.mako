@@ -26,6 +26,16 @@
 
 	<!-- CDN -->
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/default.min.css">
+	<script type="module">
+		import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs'
+		mermaid.initialize({ startOnLoad: false })
+		await mermaid.run({
+			querySelector: '.language-mermaid',
+		})
+	</script>
+	<!--
+	<script src="https://cdn.jsdelivr.net/npm/@mermaid-js/tiny@11/dist/mermaid.tiny.js" async></script>
+	-->
 </head>
 <body>
 
