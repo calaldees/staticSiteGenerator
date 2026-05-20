@@ -26,11 +26,11 @@
 <%doc>-------------------------------------------------------------------</%doc>
 
 <div id="layout" class="pure-g">
+
 	<div class="sidebar pure-u-1 pure-u-md-1-4">
 		<div class="header">
-			<h1 class="brand-title">${metadata.title}</h1>
-			<h2 class="brand-tagline">${metadata.description}</h2>
-			<%doc>${markdown_html}</%doc>
+			<h1 class="brand-title">Title</h1>
+			<h2 class="brand-tagline">Description</h2>
 
 			<nav class="nav">
 				<ul class="nav-list">
@@ -41,30 +41,35 @@
 		</div>
 	</div>
 
+	<%def name="render_post(item)">
+		<%
+			author_name = next(item.get('authors',()), '')
+			author = lookup_author(author_name)
+			title = item['title']
+		%>
+		<section class="post">
+			<header class="post-header">
+				<img width="48" height="48" alt="${author_name}" class="post-avatar" src="${author.gravatar_url}">
+				<h2 class="post-title">${title}</h2>
+				<p class="post-meta">
+					By <a href="#" class="post-author">${author_name}</a>
+					under
+					% for category in item.categories:
+						<a class="post-category post-category-design" href="#">${category}</a>
+					% endfor
+				</p>
+			</header>
+			<div class="post-description">
+				<p>${description}</p>
+			</div>
+		</section>
+	</%def>
+
 	<div class="content pure-u-1 pure-u-md-3-4">
 		<div>
-			<!-- A wrapper for all the blog posts -->
 			<div class="posts">
 				<h1 class="content-subhead">Pinned Post</h1>
-
-				<!-- A single blog post -->
-				<section class="post">
-					<header class="post-header">
-						<img width="48" height="48" alt="Tilo Mitra&#x27;s avatar" class="post-avatar" src="/img/common/tilo-avatar.png">
-
-						<h2 class="post-title">Welcome to Pure</h2>
-
-						<p class="post-meta">
-							By <a href="#" class="post-author">Tilo Mitra</a> under <a class="post-category post-category-design" href="#">CSS</a> <a class="post-category post-category-pure" href="#">Pure</a>
-						</p>
-					</header>
-
-					<div class="post-description">
-						<p>
-							Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
-						</p>
-					</div>
-				</section>
+				${render_post(db['about'])}
 			</div>
 
 			<div class="posts">

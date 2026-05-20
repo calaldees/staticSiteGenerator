@@ -5,7 +5,8 @@ import logging
 import os
 import pickle
 import subprocess
-from collections.abc import Mapping, MutableMapping
+from collections.abc import Mapping
+from hashlib import sha256
 from pathlib import Path
 from typing import Any
 
@@ -47,13 +48,16 @@ class JSONObjectEncoder(json.JSONEncoder):
         return super().default(obj)
 
 
-from hashlib import sha256
-def getGravatarHash(email: str) -> str:
-  hash = sha256()
-  hash.update(email.strip().lower().encode('utf8'))
-  return hash.hexdigest()
-def getGravatarUrl(email: str) -> str:
-    return f'https://0.gravatar.com/avatar/{getGravatarHash(email)}'
+class Gravatar:
+    @staticmethod
+    def getGravatarHash(email: str) -> str:
+        hash = sha256()
+        hash.update(email.strip().lower().encode("utf8"))
+        return hash.hexdigest()
+
+    @classmethod
+    def getGravatarUrl(cls, email: str) -> str:
+        return f"https://0.gravatar.com/avatar/{cls.getGravatarHash(email)}"
 
 
 def render_template(path: Path, context: Mapping[str, Any]) -> str:
@@ -83,18 +87,67 @@ def render_markdown_to_html(markdown: str) -> str:
     return process_output.stdout.decode("utf8")
 
 
+class MetadataDB(dict[Path, Mapping]):
+    def __init__(self):
+        self.path_metadata = PATH_BUILD.joinpath("metadata.json")
+        self.path_metadata_db = PATH_BUILD.joinpath("metadata.pickle")
+        if self.path_metadata_db.exists():
+            with self.path_metadata_db.open("rb") as f:
+                self |= pickle.load(f)
+        self.has_changed = False
+
+    def __setitem__(self, key: Path, value: Mapping) -> None:
+        self.has_changed = True
+        return super().__setitem__(key, value)
+
+    def save(self) -> None:
+        if not self.has_changed:
+            return
+        log.info(
+            f"has_modified - saving {self.path_metadata_db} + {self.path_metadata}"
+        )
+        with self.path_metadata_db.open("wb") as f:
+            pickle.dump(metadata_db, f)
+        with self.path_metadata.open("w") as f:
+            data = {str(k): v for k, v in metadata_db.items()}
+            json.dump(data, f, cls=JSONObjectEncoder)
+
+
+def render_global_templates(metadata_db: MetadataDB):
+    # Render global pages from metadata_db
+    GLOBAL_TEMPLATE_PATHS = (
+        Path("index.html.mako"),
+        Path("authors.html.mako"),
+    )
+    for path in GLOBAL_TEMPLATE_PATHS:
+        rendered = render_template(
+            PATH_TEMPLATES.joinpath(path),
+            context=dict(db=metadata_db),
+        )
+        PATH_BUILD.joinpath(path).with_suffix("").write_text(rendered)
+
+
+def copy_static():
+    for path_static in PATHS_STATIC:
+        if not path_static.is_dir():
+            continue
+        for path_src in path_static.glob("**"):
+            path_dst = PATH_BUILD.joinpath(path_src)
+            if not path_dst.exists() or (
+                path_dst.exists()
+                and path_src.stat().st_mtime > path_dst.stat().st_mtime
+            ):
+                path_dst.parent.mkdir(parents=True, exist_ok=True)
+                path_src.copy(path_dst)
+                log.debug(f"static: {path_dst}")
+
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
 
-    path_metadata = PATH_BUILD.joinpath("metadata.json")
-    path_metadata_db = PATH_BUILD.joinpath("metadata.pickle")
-    metadata_db: MutableMapping[Path, Mapping] = {}
-    if path_metadata_db.exists():
-        with path_metadata_db.open("rb") as f:
-            metadata_db = pickle.load(f)
+    metadata_db = MetadataDB()
 
-    # Consider fastscan of ousource + destination files?
-    has_modified = False
+    # Consider fastscan of source + destination files?
     for path_src in PATH_CONTENT.glob("**"):
         if path_src.suffix != ".md" or path_src.stem.startswith("_"):
             continue
@@ -104,7 +157,9 @@ if __name__ == "__main__":
             path_src.relative_to(PATH_CONTENT).with_suffix(".html")
         )
         path_output_mtime = path_dst.stat().st_mtime if path_dst.exists() else 0
-        if path_mtime == path_output_mtime:  # TODO: and built_template_mtime == template_mtime
+        if (
+            path_mtime == path_output_mtime
+        ):  # TODO: and built_template_mtime == template_mtime
             log.debug(f"skipping {path_src}")
             continue
 
@@ -112,7 +167,7 @@ if __name__ == "__main__":
         metadata = frontmatter_markdown.metadata
         html = render_markdown_to_html(frontmatter_markdown.content)
 
-        # Augment fontmatter-metadata with additional stuff
+        # Augment frontmatter-metadata with additional stuff
         metadata = (
             {
                 "template": "markdown.html.mako",
@@ -123,9 +178,10 @@ if __name__ == "__main__":
                 "path_dst": path_dst.relative_to(PATH_BUILD),
             }
         )
-        if 'email' in metadata:
-            metadata['gravatar_url'] = getGravatarUrl(metadata['email'])
+        if "email" in metadata:
+            metadata["gravatar_url"] = Gravatar.getGravatarUrl(metadata["email"])
 
+        # Render single html page
         rendered = render_template(
             PATH_TEMPLATES.joinpath(metadata["template"]),
             context=dict(
@@ -142,24 +198,12 @@ if __name__ == "__main__":
         path_dst.write_text(rendered)
         os.utime(path_dst, (path_mtime, path_mtime))  # Output mtime should match source
 
-        has_modified = True
         metadata_db[metadata["path_dst"]] = metadata
         log.info(path_dst)
 
-    if has_modified:
-        log.info(f"has_modified - saving {path_metadata_db} + {path_metadata}")
-        with path_metadata_db.open("wb") as f:
-            pickle.dump(metadata_db, f)
-        with path_metadata.open("w") as f:
-            data = {str(k): v for k, v in metadata_db.items()}
-            json.dump(data, f, cls=JSONObjectEncoder)
+    # Single page processing complete ------------------------------------------
 
-    for path_static in PATHS_STATIC:
-        if not path_static.is_dir():
-            continue
-        for path_src in path_static.glob('**'):
-            path_dst = PATH_BUILD.joinpath(path_src)
-            if not path_dst.exists() or (path_dst.exists() and path_src.stat().st_mtime > path_dst.stat().st_mtime):
-                path_dst.parent.mkdir(parents=True, exist_ok=True)
-                path_src.copy(path_dst)
-                log.debug(f'static: {path_dst}')
+    metadata_db.save()
+    if metadata_db.has_changed:
+        render_global_templates(metadata_db)
+    copy_static()
