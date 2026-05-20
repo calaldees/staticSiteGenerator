@@ -100,6 +100,9 @@ class MetadataDB(dict[Path, Mapping]):
         self.has_changed = True
         return super().__setitem__(key, value)
 
+    def get(self, key: str) -> Mapping:
+        return super().get(key) or super().get(Path(key).with_suffix('.html')) or {}
+
     def save(self) -> None:
         if not self.has_changed:
             return
@@ -107,13 +110,13 @@ class MetadataDB(dict[Path, Mapping]):
             f"has_modified - saving {self.path_metadata_db} + {self.path_metadata}"
         )
         with self.path_metadata_db.open("wb") as f:
-            pickle.dump(metadata_db, f)
+            pickle.dump(db, f)
         with self.path_metadata.open("w") as f:
-            data = {str(k): v for k, v in metadata_db.items()}
+            data = {str(k): v for k, v in db.items()}
             json.dump(data, f, cls=JSONObjectEncoder)
 
 
-def render_global_templates(metadata_db: MetadataDB):
+def render_global_templates(db: MetadataDB):
     # Render global pages from metadata_db
     GLOBAL_TEMPLATE_PATHS = (
         Path("index.html.mako"),
@@ -122,7 +125,7 @@ def render_global_templates(metadata_db: MetadataDB):
     for path in GLOBAL_TEMPLATE_PATHS:
         rendered = render_template(
             PATH_TEMPLATES.joinpath(path),
-            context=dict(db=metadata_db),
+            context=dict(db=db),
         )
         PATH_BUILD.joinpath(path).with_suffix("").write_text(rendered)
 
@@ -145,7 +148,7 @@ def copy_static():
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
 
-    metadata_db = MetadataDB()
+    db = MetadataDB()
 
     # Consider fastscan of source + destination files?
     for path_src in PATH_CONTENT.glob("**"):
@@ -198,12 +201,12 @@ if __name__ == "__main__":
         path_dst.write_text(rendered)
         os.utime(path_dst, (path_mtime, path_mtime))  # Output mtime should match source
 
-        metadata_db[metadata["path_dst"]] = metadata
+        db[metadata["path_dst"]] = metadata
         log.info(path_dst)
 
     # Single page processing complete ------------------------------------------
 
-    metadata_db.save()
-    if metadata_db.has_changed:
-        render_global_templates(metadata_db)
+    db.save()
+    if db.has_changed:
+        render_global_templates(db)
     copy_static()

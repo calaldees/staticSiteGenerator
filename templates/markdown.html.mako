@@ -9,17 +9,9 @@
 	<link id="favicon" rel="shortcut icon" type="image/png" href="data:image/png;base64,....==" />
 
 	<!-- Styles -->
-	<link rel="stylesheet" href="static/pure-min.css">
-	<link rel="stylesheet" href="static/grids-responsive-min.css">
-	<link rel="stylesheet" href="static/page.css"/>
-	<%doc>
-	<style>
-	<%include file="pure-min.css"/>
-	<%include file="grids-responsive-min.css"/>
-	<%include file="pure-layout-marketing.css"/>
-	<%include file="page.css"/>
-	</style>
-	</%doc>
+	<link rel="stylesheet" href="/static/pure-min.css">
+	<link rel="stylesheet" href="/static/grids-responsive-min.css">
+	<link rel="stylesheet" href="/static/page.css"/>
 
 	<!-- Scripts -->
 	<script src="/static/static_site.js" async></script>

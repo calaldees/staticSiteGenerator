@@ -5,14 +5,14 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<%include file="_og_meta.mako"/>
 
-	<title>${metadata.title}</title>
+	<title>TODO</title>
 	<link id="favicon" rel="shortcut icon" type="image/png" href="data:image/png;base64,....==" />
 
 	<!-- Styles -->
-	<link rel="stylesheet" href="static/pure-min.css">
-	<link rel="stylesheet" href="static/grids-responsive-min.css">
-	<link rel="stylesheet" href="static/pure-layout-blog.css"/>
-	<link rel="stylesheet" href="static/page.css"/>
+	<link rel="stylesheet" href="/static/pure-min.css">
+	<link rel="stylesheet" href="/static/grids-responsive-min.css">
+	<link rel="stylesheet" href="/static/pure-layout-blog.css"/>
+	<link rel="stylesheet" href="/static/page.css"/>
 	<%doc>
 	<link rel="stylesheet" href="static/pure/buttons-min.css">
 	<link rel="stylesheet" href="static/pure/menus-min.css">
@@ -25,13 +25,38 @@
 
 <%doc>-------------------------------------------------------------------</%doc>
 
+<%def name="render_post(item)">
+	<%
+		author_name = next(iter(item.get('authors',())), '')
+		author = db.get(f'authors/{author_name.lower().replace(" ","-")}')
+		title = item['title']
+		description = item['description']
+	%>
+	<section class="post">
+		<header class="post-header">
+			<img width="48" height="48" alt="${author_name}" class="post-avatar" src="${author.get('gravatar_url') or 'placeholder'}">
+			<h2 class="post-title">${title}</h2>
+			<p class="post-meta">
+				By <a href="#" class="post-author">${author_name}</a>
+				under
+				% for category in item.get('categories', ()):
+					<a class="post-category post-category-design" href="#">${category}</a>
+				% endfor
+			</p>
+		</header>
+		<div class="post-description">
+			<p>${description}</p>
+		</div>
+	</section>
+</%def>
+
+
 <div id="layout" class="pure-g">
 
 	<div class="sidebar pure-u-1 pure-u-md-1-4">
 		<div class="header">
 			<h1 class="brand-title">Title</h1>
 			<h2 class="brand-tagline">Description</h2>
-
 			<nav class="nav">
 				<ul class="nav-list">
 					<li class="nav-item"><a class="pure-button" href="/authors">Authors</a></li>
@@ -41,101 +66,18 @@
 		</div>
 	</div>
 
-	<%def name="render_post(item)">
-		<%
-			author_name = next(item.get('authors',()), '')
-			author = lookup_author(author_name)
-			title = item['title']
-		%>
-		<section class="post">
-			<header class="post-header">
-				<img width="48" height="48" alt="${author_name}" class="post-avatar" src="${author.gravatar_url}">
-				<h2 class="post-title">${title}</h2>
-				<p class="post-meta">
-					By <a href="#" class="post-author">${author_name}</a>
-					under
-					% for category in item.categories:
-						<a class="post-category post-category-design" href="#">${category}</a>
-					% endfor
-				</p>
-			</header>
-			<div class="post-description">
-				<p>${description}</p>
-			</div>
-		</section>
-	</%def>
-
 	<div class="content pure-u-1 pure-u-md-3-4">
 		<div>
 			<div class="posts">
 				<h1 class="content-subhead">Pinned Post</h1>
-				${render_post(db['about'])}
+				${render_post(db.get('articles/about'))}
 			</div>
 
 			<div class="posts">
 				<h1 class="content-subhead">Recent Posts</h1>
-
-				<section class="post">
-					<header class="post-header">
-						<img width="48" height="48" alt="Eric Ferraiuolo&#x27;s avatar" class="post-avatar" src="/img/common/ericf-avatar.png">
-
-						<h2 class="post-title">Everything You Need to Know About Node.js</h2>
-
-						<p class="post-meta">
-							By <a class="post-author" href="#">Eric Ferraiuolo</a> under <a class="post-category post-category-js" href="#">JavaScript</a>
-						</p>
-					</header>
-
-					<div class="post-description">
-						<p>
-							Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
-						</p>
-					</div>
-				</section>
-
-				<section class="post">
-					<header class="post-header">
-						<img width="48" height="48" alt="Reid Burke&#x27;s avatar" class="post-avatar" src="/img/common/reid-avatar.png">
-
-						<h2 class="post-title">Photos from CSSConf and JSConf</h2>
-
-						<p class="post-meta">
-							By <a class="post-author" href="#">Reid Burke</a> under <a class="post-category" href="#">Uncategorized</a>
-						</p>
-					</header>
-
-					<div class="post-description">
-						<div class="post-images pure-g">
-							<div class="pure-u-1 pure-u-md-1-2">
-								<a href="http://www.flickr.com/photos/uberlife/8915936174/">
-								<!--
-									<img alt="Photo of someone working poolside at a resort"
-										 class="pure-img-responsive"
-										 src="http://farm8.staticflickr.com/7448/8915936174_8d54ec76c6.jpg">
-										 -->
-								</a>
-
-								<div class="post-image-meta">
-									<h3>CSSConf Photos</h3>
-								</div>
-							</div>
-
-							<div class="pure-u-1 pure-u-md-1-2">
-								<a href="http://www.flickr.com/photos/uberlife/8907351301/">
-								<!--
-									<img alt="Photo of the sunset on the beach"
-										 class="pure-img-responsive"
-										 src="http://farm8.staticflickr.com/7382/8907351301_bd7460cffb.jpg">
-										 -->
-								</a>
-
-								<div class="post-image-meta">
-									<h3>JSConf Photos</h3>
-								</div>
-							</div>
-						</div>
-					</div>
-				</section>
+				% for item in db.values():
+				${render_post(item)}
+				% endfor
 			</div>
 
 			<div class="footer">
