@@ -8,17 +8,11 @@
 	<title>TODO</title>
 	<link id="favicon" rel="shortcut icon" type="image/png" href="data:image/png;base64,....==" />
 
-	<!-- Styles -->
 	<link rel="stylesheet" href="/static/pure-min.css">
 	<link rel="stylesheet" href="/static/grids-responsive-min.css">
 	<link rel="stylesheet" href="/static/pure-layout-blog.css"/>
-	<link rel="stylesheet" href="/static/page.css"/>
-	<%doc>
-	<link rel="stylesheet" href="static/pure/buttons-min.css">
-	<link rel="stylesheet" href="static/pure/menus-min.css">
-	</%doc>
 
-	<!-- Scripts -->
+	<!--<link rel="stylesheet" href="/static/page.css"/>-->
 	<script src="/static/static_site.js" async></script>
 </head>
 <body>
@@ -31,17 +25,23 @@
 		author = db.get(f'authors/{author_name.lower().replace(" ","-")}')
 		title = item['title']
 		description = item['description']
+		a_href = item['path_dst']
 	%>
 	<section class="post">
 		<header class="post-header">
+			<a href="${author.get('path_dst')}">
 			<img width="48" height="48" alt="${author_name}" class="post-avatar" src="${author.get('gravatar_url') or 'placeholder'}">
+			</a>
+			<a href="${a_href}">
 			<h2 class="post-title">${title}</h2>
+			</a>
 			<p class="post-meta">
-				By <a href="#" class="post-author">${author_name}</a>
+				By <a href="${author.get('path_dst')}" class="post-author">${author_name}</a>
 				under
 				% for category in item.get('categories', ()):
 					<a class="post-category post-category-design" href="#">${category}</a>
 				% endfor
+				${item.get('date', '')}
 			</p>
 		</header>
 		<div class="post-description">
@@ -75,7 +75,10 @@
 
 			<div class="posts">
 				<h1 class="content-subhead">Recent Posts</h1>
-				% for item in db.values():
+				<%
+				import datetime
+				%>
+				% for item in sorted(filter(lambda i: str(i['path_src']).startswith('article'), db.values()), key=lambda i: i.get('date',datetime.datetime.fromtimestamp(0, tz=datetime.UTC)), reverse=True)[:3]:
 				${render_post(item)}
 				% endfor
 			</div>

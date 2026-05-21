@@ -1,7 +1,7 @@
 ---
 title: "Language Reference"
 meta_title: ""
-description: "Foundation reference tool to free learners from the single language rut"
+description: "A reference tool to move learners between languages"
 date: 2026-02-20T21:00:00Z
 image: "/images/image-placeholder.png"
 categories: ["GCSE", "A-Level", "University", "Professional"]

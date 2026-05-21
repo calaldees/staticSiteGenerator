@@ -1,1 +1,34 @@
-/* page.css */
+/* https://github.com/pure-css/pure/blob/d35fb6fcbcd888da11a7215fe61d1efeda374699/site/static/layouts/side-menu/styles.css#L50-L74 */
+.header {
+     margin: 0;
+     color: #333;
+     text-align: center;
+     padding: 2.5em 2em 0;
+     border-bottom: 1px solid #eee;
+ }
+    .header h1 {
+        margin: 0.2em 0;
+        font-size: 3em;
+        font-weight: 300;
+    }
+     .header h2 {
+        font-weight: 300;
+        color: #ccc;
+        padding: 0;
+        margin-top: 0;
+    }
+
+.content {}
+    .content + :is(h1, h2, h3, h4, h5, h6) {
+        margin: 50px 0 20px 0;
+        font-weight: 300;
+        color: #888;
+    }
+
+@media (min-width: 48em) {
+    .header,
+    .content {
+        padding-left: 2em;
+        padding-right: 2em;
+    }
+}
