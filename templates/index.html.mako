@@ -1,23 +1,4 @@
-<!DOCTYPE html>
-<html>
-<head>
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<%include file="_og_meta.mako"/>
-
-	<title>TODO</title>
-	<link id="favicon" rel="shortcut icon" type="image/png" href="data:image/png;base64,....==" />
-
-	<link rel="stylesheet" href="/static/pure-min.css">
-	<link rel="stylesheet" href="/static/grids-responsive-min.css">
-	<link rel="stylesheet" href="/static/pure-layout-blog.css"/>
-
-	<!--<link rel="stylesheet" href="/static/page.css"/>-->
-	<script src="/static/static_site.js" async></script>
-</head>
-<body>
-
-<%doc>-------------------------------------------------------------------</%doc>
+<%include file="_head.mako"/>
 
 <%def name="render_post(item)">
 	<%
@@ -50,24 +31,14 @@
 	</section>
 </%def>
 
-
+<body>
 <div id="layout" class="pure-g">
+	<%include file="_nav.mako"/>
 
-	<div class="sidebar pure-u-1 pure-u-md-1-4">
-		<div class="header">
-			<h1 class="brand-title">Title</h1>
-			<h2 class="brand-tagline">Description</h2>
-			<nav class="nav">
-				<ul class="nav-list">
-					<li class="nav-item"><a class="pure-button" href="/authors">Authors</a></li>
-					<li class="nav-item"><a class="pure-button" href="/articles">Articles</a></li>
-				</ul>
-			</nav>
-		</div>
-	</div>
-
+	<%doc><div id="main"></%doc>
 	<div class="content pure-u-1 pure-u-md-3-4">
 		<div>
+
 			<div class="posts">
 				<h1 class="content-subhead">Pinned Post</h1>
 				${render_post(db.get('articles/about'))}
@@ -78,7 +49,7 @@
 				<%
 				import datetime
 				%>
-				% for item in sorted(filter(lambda i: str(i['path_src']).startswith('article'), db.values()), key=lambda i: i.get('date',datetime.datetime.fromtimestamp(0, tz=datetime.UTC)), reverse=True)[:3]:
+				% for item in db.articles[:3]:
 				${render_post(item)}
 				% endfor
 			</div>
@@ -91,9 +62,10 @@
 					</ul>
 				</div>
 			</div>
+
 		</div>
 	</div>
+
 </div>
-<%doc>-------------------------------------------------------------------</%doc>
 </body>
 </html>

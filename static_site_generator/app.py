@@ -5,7 +5,7 @@ import logging
 import os
 import pickle
 import subprocess
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from hashlib import sha256
 from pathlib import Path
 from typing import Any
@@ -115,17 +115,32 @@ class MetadataDB(dict[Path, Mapping]):
             data = {str(k): v for k, v in db.items()}
             json.dump(data, f, cls=JSONObjectEncoder)
 
+    def get_path_src_startswith(self, startswith: str) -> filter[Mapping]:
+        return filter(lambda i: str(i['path_src']).startswith(startswith), self.values())
+
+    @property
+    def articles(self) -> Sequence[Mapping]:
+        return sorted(
+            db.get_path_src_startswith('article'),
+            key=lambda i: i.get('date', datetime.datetime.fromtimestamp(0, tz=datetime.UTC)),
+            reverse=True,
+        )
 
 def render_global_templates(db: MetadataDB):
     # Render global pages from metadata_db
     GLOBAL_TEMPLATE_PATHS = (
         Path("index.html.mako"),
         Path("authors.html.mako"),
+        Path("rss.xml.mako"),
     )
     for path in GLOBAL_TEMPLATE_PATHS:
+        log.info(path)
         rendered = render_template(
             PATH_TEMPLATES.joinpath(path),
-            context=dict(db=db),
+            context=dict(
+                title='temp',
+                db=db,
+            ),
         )
         PATH_BUILD.joinpath(path).with_suffix("").write_text(rendered)
 
@@ -173,7 +188,8 @@ if __name__ == "__main__":
         # Augment frontmatter-metadata with additional stuff
         metadata = (
             {
-                "template": "markdown.html.mako",
+                "template": "article.html.mako",
+                "date": datetime.datetime.fromtimestamp(path_output_mtime, tz=datetime.UTC),
             }
             | metadata
             | {
