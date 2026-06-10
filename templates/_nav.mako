@@ -1,7 +1,9 @@
 <div class="sidebar pure-u-1 pure-u-md-1-4">
     <div class="header">
-        <h1 class="brand-title">Title</h1>
-        <h2 class="brand-tagline">Description</h2>
+        <a href="/">
+            <h1 class="brand-title">Title</h1>
+            <h2 class="brand-tagline">Description</h2>
+        </a>
         <nav class="nav">
             <ul class="nav-list">
                 <li class="nav-item"><a class="pure-button" href="/authors">Authors</a></li>

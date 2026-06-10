@@ -1,6 +1,14 @@
 /* https://github.com/pure-css/pure/blob/d35fb6fcbcd888da11a7215fe61d1efeda374699/site/static/layouts/side-menu/styles.css#L50-L74 */
 
 
+@media (prefers-color-scheme: dark) {
+
+}
+
+.header a {
+    text-decoration: none;
+    color: inherit;
+}
 
 .article_header {
     margin: 0;

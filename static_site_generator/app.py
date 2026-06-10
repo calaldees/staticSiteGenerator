@@ -9,11 +9,15 @@ from collections.abc import Mapping, Sequence
 from hashlib import sha256
 from pathlib import Path
 from typing import Any
+from functools import partial
 
 import frontmatter
 import mako
 import mako.lookup
 from dotwiz import DotWiz
+
+from .template_vars import recurse_inplace_template_substitution
+
 
 log = logging.getLogger(__name__)
 
@@ -46,6 +50,23 @@ class JSONObjectEncoder(json.JSONEncoder):
                 type=type(obj).__name__, name=obj.name, value=obj.value
             )
         return super().default(obj)
+
+
+# https://stackoverflow.com/a/74728773/3356840
+import yaml
+def yaml_include_constructor(loader: yaml.Loader, node: yaml.Node) -> Any:
+    """
+    Include YAML file referenced with `!include filename`
+    e.g.
+        root:
+            a: 1
+            b: !include addition.yaml
+    """
+    with open(Path(loader.name).parent.joinpath(loader.construct_yaml_str(node)).resolve(), "r",) as f:
+        return yaml.load(f, type(loader))
+YamlLoader = yaml.SafeLoader  # Works with any loader
+YamlLoader.add_constructor("!include", yaml_include_constructor)
+yaml_load = partial(yaml.load, Loader=YamlLoader)
 
 
 class Gravatar:
@@ -100,8 +121,8 @@ class MetadataDB(dict[Path, Mapping]):
         self.has_changed = True
         return super().__setitem__(key, value)
 
-    def get(self, key: str) -> Mapping:
-        return super().get(key) or super().get(Path(key).with_suffix('.html')) or {}
+    def get(self, key: str | Path) -> Mapping:
+        return super().get(key) or super().get(Path(key).with_suffix(".html")) or {}
 
     def save(self) -> None:
         if not self.has_changed:
@@ -116,17 +137,22 @@ class MetadataDB(dict[Path, Mapping]):
             json.dump(data, f, cls=JSONObjectEncoder)
 
     def get_path_src_startswith(self, startswith: str) -> filter[Mapping]:
-        return filter(lambda i: str(i['path_src']).startswith(startswith), self.values())
+        return filter(
+            lambda i: str(i["path_src"]).startswith(startswith), self.values()
+        )
 
     @property
     def articles(self) -> Sequence[Mapping]:
         return sorted(
-            db.get_path_src_startswith('article'),
-            key=lambda i: i.get('date', datetime.datetime.fromtimestamp(0, tz=datetime.UTC)),
+            db.get_path_src_startswith("article"),
+            key=lambda i: i.get(
+                "date", datetime.datetime.fromtimestamp(0, tz=datetime.UTC)
+            ),
             reverse=True,
         )
 
-def render_global_templates(db: MetadataDB):
+
+def render_global_templates(db: MetadataDB, context: DotWiz):
     # Render global pages from metadata_db
     GLOBAL_TEMPLATE_PATHS = (
         Path("index.html.mako"),
@@ -138,8 +164,8 @@ def render_global_templates(db: MetadataDB):
         rendered = render_template(
             PATH_TEMPLATES.joinpath(path),
             context=dict(
-                title='temp',
                 db=db,
+                **context,
             ),
         )
         PATH_BUILD.joinpath(path).with_suffix("").write_text(rendered)
@@ -162,6 +188,9 @@ def copy_static():
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
+
+    context = DotWiz(yaml_load(Path("data/index.yaml").open()))
+    recurse_inplace_template_substitution(context)
 
     db = MetadataDB()
 
@@ -189,7 +218,9 @@ if __name__ == "__main__":
         metadata = (
             {
                 "template": "article.html.mako",
-                "date": datetime.datetime.fromtimestamp(path_output_mtime, tz=datetime.UTC),
+                "date": datetime.datetime.fromtimestamp(
+                    path_output_mtime, tz=datetime.UTC
+                ),
             }
             | metadata
             | {
@@ -204,8 +235,9 @@ if __name__ == "__main__":
         rendered = render_template(
             PATH_TEMPLATES.joinpath(metadata["template"]),
             context=dict(
-                metadata=DotWiz(metadata),
                 markdown_html=html,
+                **DotWiz(metadata),
+                **context,
             ),
         )
         if not rendered:
@@ -224,5 +256,5 @@ if __name__ == "__main__":
 
     db.save()
     if db.has_changed:
-        render_global_templates(db)
+        render_global_templates(db, context)
     copy_static()

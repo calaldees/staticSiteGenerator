@@ -35,9 +35,7 @@
 <div id="layout" class="pure-g">
 	<%include file="_nav.mako"/>
 
-	<%doc><div id="main"></%doc>
 	<div class="content pure-u-1 pure-u-md-3-4">
-		<div>
 
 			<div class="posts">
 				<h1 class="content-subhead">Pinned Post</h1>
@@ -46,9 +44,6 @@
 
 			<div class="posts">
 				<h1 class="content-subhead">Recent Posts</h1>
-				<%
-				import datetime
-				%>
 				% for item in db.articles[:3]:
 				${render_post(item)}
 				% endfor
@@ -63,7 +58,6 @@
 				</div>
 			</div>
 
-		</div>
 	</div>
 
 </div>
