@@ -1,13 +1,15 @@
 <div class="sidebar pure-u-1 pure-u-md-1-4">
     <div class="header">
         <a href="/">
-            <h1 class="brand-title">Title</h1>
-            <h2 class="brand-tagline">Description</h2>
+            <img src="${site.favicon}" alt="${site.title} logo">
+            <h1 class="brand-title">${site.title}</h1>
+            <h2 class="brand-tagline">${site.tagline}</h2>
         </a>
         <nav class="nav">
             <ul class="nav-list">
                 <li class="nav-item"><a class="pure-button" href="/authors">Authors</a></li>
                 <li class="nav-item"><a class="pure-button" href="/articles">Articles</a></li>
+                <li class="nav-item"><a class="pure-button" href="/rss.xml">RSS</a></li>
             </ul>
         </nav>
     </div>

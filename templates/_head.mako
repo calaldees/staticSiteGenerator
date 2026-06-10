@@ -5,8 +5,8 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<%include file="_og_meta.mako"/>
 
-	<title>${title}</title>
-	<link id="favicon" rel="shortcut icon" type="image/png" href="data:image/png;base64,....==" />
+	<title>${site.title} - ${title or ''}</title>
+	<link id="favicon" rel="shortcut icon" type="image/svg" href="${site.favicon}" />
 
 	<link rel="stylesheet" href="/static/pure-min.css">
 	<link rel="stylesheet" href="/static/grids-responsive-min.css">

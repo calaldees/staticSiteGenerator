@@ -1,8 +1,8 @@
-
+DOCKER_IMAGE:=staticsite
 
 build_site:
 	${MAKE} --directory static
-	uv run --no-dev static_site_generator/app.py
+	uv run --no-dev -m static_site_generator.app
 # -m pdb -c continue
 
 serve: build_site
@@ -29,6 +29,17 @@ build/index.html.gz:
 		-or -iname '*.txt' \
 		-or -iname '*.md' \
 		| xargs gzip -9 -k
+
+build_docker:
+	docker build --tag ${DOCKER_IMAGE} --target site .
+
+	docker create --name=${DOCKER_IMAGE}_container ${DOCKER_IMAGE}
+	docker cp ${DOCKER_IMAGE}_container:/site/build/ build/
+	docker rm ${DOCKER_IMAGE}_container
+
+serve_docker:
+	docker build --tag ${DOCKER_IMAGE} .
+	docker run --rm --publish 80:80 ${DOCKER_IMAGE}
 
 #example:
 #	showdown makehtml --input test.md

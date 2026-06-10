@@ -2,13 +2,13 @@
 <rss version="2.0">
 <channel>
 	<language>en-uk</language>
-	<title>W3Schools Home Page</title>
-	<link>https://www.w3schools.com</link>
+	<title>${site.title}</title>
+	<link>${site.url}</link>
 	<description>Free web building tutorials</description>
 	<image>
-		<url>https://www.w3schools.com/images/logo.gif</url>
-		<title>W3Schools.com</title>
-		<link>https://www.w3schools.com</link>
+		<url>${site.favicon}</url>
+		<title>${site.title}</title>
+		<link>${site.url}</link>
 	</image>
 	<pubDate>Thu, 27 Apr 2006</pubDate><%doc>latest pub date</%doc>
 	<ttl>2880</ttl><%doc>Two days in minuets</%doc>

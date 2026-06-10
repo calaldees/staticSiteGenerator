@@ -1,1 +1,5 @@
-title: ComputingTeachers.uk
+site:
+  url: https://ComputingTeachers.uk
+  title: ComputingTeachers.uk
+  tagline: Ideas and resources for teaching computing
+  favicon: /static/logo.svg

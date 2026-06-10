@@ -234,11 +234,11 @@ if __name__ == "__main__":
         # Render single html page
         rendered = render_template(
             PATH_TEMPLATES.joinpath(metadata["template"]),
-            context=dict(
-                markdown_html=html,
-                **DotWiz(metadata),
+            context={
                 **context,
-            ),
+                **DotWiz(metadata),
+                'markdown_html': html,
+            },
         )
         if not rendered:
             log.error(f"Failed to render template {path_src}")

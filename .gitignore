@@ -1,8 +1,8 @@
+*.py[cod]
 
 .venv
 node_modules
 build
 
 package-lock.json
-
-*.py[cod]
+uv.lock
