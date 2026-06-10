@@ -5,6 +5,7 @@ FROM python:alpine AS site
 
     WORKDIR /site/
 
+    RUN apk add npm make
     COPY package.json .
     RUN npm install
 
@@ -12,7 +13,8 @@ FROM python:alpine AS site
     RUN UV_NO_SYNC=False uv sync --no-dev
 
     COPY . .
-    CMD [ "make" ]
+    RUN make
+    #CMD [ "make" ]
 
 
 FROM nginx:alpine AS nginx

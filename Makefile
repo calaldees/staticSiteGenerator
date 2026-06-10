@@ -30,7 +30,11 @@ build/index.html.gz:
 		-or -iname '*.md' \
 		| xargs gzip -9 -k
 
-build_docker:
+shell_docker:
+	docker build --tag ${DOCKER_IMAGE} --target site .
+	docker run --rm -it ${DOCKER_IMAGE} /bin/sh
+
+build_docker: clean
 	docker build --tag ${DOCKER_IMAGE} --target site .
 
 	docker create --name=${DOCKER_IMAGE}_container ${DOCKER_IMAGE}
@@ -49,6 +53,7 @@ test:
 clean:
 	rm -rf build
 clean_all: clean
+	docker image rm ${DOCKER_IMAGE}
 	rm -rf .venv node_modules package-lock.json
 
 upgrade:
