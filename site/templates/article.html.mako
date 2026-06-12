@@ -10,7 +10,7 @@
 			<h2>${description}</h2>
 		</div>
 		<div class="article_content">
-			${markdown_html}
+			${html}
 		</div>
 
 	</div>

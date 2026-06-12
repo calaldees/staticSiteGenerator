@@ -1,7 +1,7 @@
 DOCKER_IMAGE:=staticsite
 
 build_site:
-	${MAKE} --directory static
+	${MAKE} --directory site/static
 	uv run --no-dev -m static_site_generator.app
 # -m pdb -c continue
 

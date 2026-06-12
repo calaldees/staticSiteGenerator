@@ -5,34 +5,23 @@ import logging
 import os
 import pickle
 import subprocess
-from collections.abc import Mapping, Sequence
+import tempfile
+from collections.abc import Generator, Mapping, Sequence
+from functools import lru_cache, partial
 from hashlib import sha256
+from itertools import chain
 from pathlib import Path
-from typing import Any
-from functools import partial
+from typing import Any, NamedTuple
 
 import frontmatter
 import mako
 import mako.lookup
+import yaml
 from dotwiz import DotWiz
 
 from .template_vars import recurse_inplace_template_substitution
 
-
 log = logging.getLogger(__name__)
-
-PATH_BUILD = Path("./build")
-PATH_BUILD.mkdir(exist_ok=True)
-
-PATH_CONTENT = Path("./content")
-PATH_TEMPLATES = Path("./templates")
-PATHS_STATIC = (
-    Path("./static"),
-    Path("./images"),
-)
-template_lookup = mako.lookup.TemplateLookup(
-    directories=(PATH_TEMPLATES,) + PATHS_STATIC
-)
 
 
 class JSONObjectEncoder(json.JSONEncoder):
@@ -53,7 +42,6 @@ class JSONObjectEncoder(json.JSONEncoder):
 
 
 # https://stackoverflow.com/a/74728773/3356840
-import yaml
 def yaml_include_constructor(loader: yaml.Loader, node: yaml.Node) -> Any:
     """
     Include YAML file referenced with `!include filename`
@@ -62,8 +50,13 @@ def yaml_include_constructor(loader: yaml.Loader, node: yaml.Node) -> Any:
             a: 1
             b: !include addition.yaml
     """
-    with open(Path(loader.name).parent.joinpath(loader.construct_yaml_str(node)).resolve(), "r",) as f:
+    with open(
+        Path(loader.name).parent.joinpath(loader.construct_yaml_str(node)).resolve(),
+        "r",
+    ) as f:
         return yaml.load(f, type(loader))
+
+
 YamlLoader = yaml.SafeLoader  # Works with any loader
 YamlLoader.add_constructor("!include", yaml_include_constructor)
 yaml_load = partial(yaml.load, Loader=YamlLoader)
@@ -81,16 +74,6 @@ class Gravatar:
         return f"https://0.gravatar.com/avatar/{cls.getGravatarHash(email)}"
 
 
-def render_template(path: Path, context: Mapping[str, Any]) -> str:
-    try:
-        return template_lookup.get_template(
-            str(path.relative_to(PATH_TEMPLATES))
-        ).render(**context)
-    except Exception:
-        log.error(mako.exceptions.text_error_template().render())
-        return ""
-
-
 def render_markdown_to_html(markdown: str) -> str:
     """
     Attempt to use the same Markdown renderer as ZeroMD
@@ -98,20 +81,22 @@ def render_markdown_to_html(markdown: str) -> str:
 
     Cant use pipe because I cant get the `argv` to `marked/main.js`
     """
-    temp = PATH_BUILD.joinpath("_temp.md")
-    temp.write_text(markdown)
-    process_output = subprocess.run(
-        ("node", "./myMarked", "-i", temp), capture_output=True
-    )
+    with tempfile.NamedTemporaryFile() as temp:
+        temp.write(markdown.encode("utf8"))
+        process_output = subprocess.run(
+            ("node", "./myMarked", "-i", temp.name),
+            capture_output=True,
+        )
     if process_output.returncode:
         raise Exception(process_output)
     return process_output.stdout.decode("utf8")
 
 
 class MetadataDB(dict[Path, Mapping]):
-    def __init__(self):
-        self.path_metadata = PATH_BUILD.joinpath("metadata.json")
-        self.path_metadata_db = PATH_BUILD.joinpath("metadata.pickle")
+    def __init__(self, path_build: Path):
+        assert path_build.is_dir()
+        self.path_metadata = path_build.joinpath("metadata.json")
+        self.path_metadata_db = path_build.joinpath("metadata.pickle")
         if self.path_metadata_db.exists():
             with self.path_metadata_db.open("rb") as f:
                 self |= pickle.load(f)
@@ -126,6 +111,7 @@ class MetadataDB(dict[Path, Mapping]):
 
     def save(self) -> None:
         if not self.has_changed:
+            log.debug(f"no {self.__class__.__name__} changes")
             return
         log.info(
             f"has_modified - saving {self.path_metadata_db} + {self.path_metadata}"
@@ -152,69 +138,107 @@ class MetadataDB(dict[Path, Mapping]):
         )
 
 
-def render_global_templates(db: MetadataDB, context: DotWiz):
-    # Render global pages from metadata_db
-    GLOBAL_TEMPLATE_PATHS = (
-        Path("index.html.mako"),
-        Path("authors.html.mako"),
-        Path("rss.xml.mako"),
-    )
-    for path in GLOBAL_TEMPLATE_PATHS:
-        log.info(path)
-        rendered = render_template(
-            PATH_TEMPLATES.joinpath(path),
-            context=dict(
-                db=db,
-                **context,
-            ),
+class PathType(enum.StrEnum):
+    DATA = enum.auto()
+    CONTENT = enum.auto()
+    STATIC = enum.auto()
+    TEMPLATES = enum.auto()
+
+
+class File(NamedTuple):
+    filesystem: Path
+    relative: Path
+
+
+class Site:
+    def __init__(self, paths: Mapping[PathType, Sequence[Path]]):
+        self.paths = paths
+        self.template_lookup = mako.lookup.TemplateLookup(
+            directories=tuple(
+                chain(self.paths[PathType.TEMPLATES], self.paths[PathType.STATIC])
+            )
         )
-        PATH_BUILD.joinpath(path).with_suffix("").write_text(rendered)
 
+    def get_files(self, path_type: PathType) -> Generator[File]:
+        for path in self.paths[path_type]:
+            for file in path.glob("**"):
+                if file.stem.startswith("_"):
+                    continue
+                yield File(file, file.relative_to(path))
 
-def copy_static():
-    for path_static in PATHS_STATIC:
-        if not path_static.is_dir():
-            continue
-        for path_src in path_static.glob("**"):
-            path_dst = PATH_BUILD.joinpath(path_src)
-            if not path_dst.exists() or (
-                path_dst.exists()
-                and path_src.stat().st_mtime > path_dst.stat().st_mtime
-            ):
-                path_dst.parent.mkdir(parents=True, exist_ok=True)
-                path_src.copy(path_dst)
-                log.debug(f"static: {path_dst}")
+    def get_file(self, path_type: PathType, filename: str) -> File:
+        for path in self.paths[path_type]:
+            path_file = path.joinpath(filename)
+            if path_file.is_file():
+                return File(path_file, path_file.relative_to(path))
+        raise ValueError(f"{filename} not found")
+
+    @lru_cache
+    def data(self, filename: str = "index.yaml") -> DotWiz:
+        # def _ff(data, file):
+        #     with file.open() as f:
+        #         data |= yaml_load(f)
+        # reduce(_ff, self.get_files(PathType.data), {})
+        with self.get_file(PathType.DATA, filename).filesystem.open() as f:
+            data = DotWiz(yaml_load(f))
+        recurse_inplace_template_substitution(data)
+        return data
+
+    def render_template(self, **kwargs) -> str:
+        template_pathname = str(
+            self.get_file(
+                PathType.TEMPLATES,
+                kwargs.get("template") or self.data().get("template") or "default.mako",
+            ).relative
+        )
+        try:
+            return self.template_lookup.get_template(template_pathname).render(
+                **self.data(), **kwargs
+            )
+        except Exception:
+            log.error(mako.exceptions.text_error_template().render())
+            return ""
 
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
 
-    context = DotWiz(yaml_load(Path("data/index.yaml").open()))
-    recurse_inplace_template_substitution(context)
+    PATH_BUILD = Path("./build")
+    PATH_BUILD.mkdir(exist_ok=True)
 
-    db = MetadataDB()
+    PATH_SITE = Path("./site")
+
+    db = MetadataDB(PATH_BUILD)
+
+    site = Site(
+        paths={
+            PathType.DATA: (PATH_SITE.joinpath("data"),),
+            PathType.TEMPLATES: (PATH_SITE.joinpath("templates"),),
+            PathType.STATIC: (
+                PATH_SITE.joinpath("static"),
+                PATH_SITE.joinpath("images"),
+            ),
+            PathType.CONTENT: (PATH_SITE.joinpath("content"),),
+        }
+    )
 
     # Consider fastscan of source + destination files?
-    for path_src in PATH_CONTENT.glob("**"):
-        if path_src.suffix != ".md" or path_src.stem.startswith("_"):
+    for path_src, path_src_relative in site.get_files(PathType.CONTENT):
+        if path_src.suffix != ".md":
             continue
 
         path_mtime = path_src.stat().st_mtime
-        path_dst = PATH_BUILD.joinpath(
-            path_src.relative_to(PATH_CONTENT).with_suffix(".html")
-        )
+        path_dst = PATH_BUILD.joinpath(path_src_relative.with_suffix(".html"))
+        path_dst_relative = path_dst.relative_to(PATH_BUILD)
         path_output_mtime = path_dst.stat().st_mtime if path_dst.exists() else 0
-        if (
-            path_mtime == path_output_mtime
-        ):  # TODO: and built_template_mtime == template_mtime
+        if path_mtime == path_output_mtime:
+            # TODO: and built_template_mtime == template_mtime
             log.debug(f"skipping {path_src}")
             continue
 
         frontmatter_markdown = frontmatter.load(path_src)
-        metadata = frontmatter_markdown.metadata
         html = render_markdown_to_html(frontmatter_markdown.content)
 
-        # Augment frontmatter-metadata with additional stuff
         metadata = (
             {
                 "template": "article.html.mako",
@@ -222,24 +246,17 @@ if __name__ == "__main__":
                     path_output_mtime, tz=datetime.UTC
                 ),
             }
-            | metadata
+            | frontmatter_markdown.metadata
             | {
-                "path_src": path_src.relative_to(PATH_CONTENT),
-                "path_dst": path_dst.relative_to(PATH_BUILD),
+                "path_src": path_src_relative,
+                "path_dst": path_dst_relative,
             }
         )
         if "email" in metadata:
             metadata["gravatar_url"] = Gravatar.getGravatarUrl(metadata["email"])
 
         # Render single html page
-        rendered = render_template(
-            PATH_TEMPLATES.joinpath(metadata["template"]),
-            context={
-                **context,
-                **DotWiz(metadata),
-                'markdown_html': html,
-            },
-        )
+        rendered = site.render_template(html=html, **metadata)
         if not rendered:
             log.error(f"Failed to render template {path_src}")
             continue
@@ -256,5 +273,18 @@ if __name__ == "__main__":
 
     db.save()
     if db.has_changed:
-        render_global_templates(db, context)
-    copy_static()
+        log.info("content db updated: rendering all global_templates")
+        for template_pathname in site.data().global_templates:
+            log.info(template_pathname)
+            rendered = site.render_template(template=template_pathname, db=db)
+            PATH_BUILD.joinpath(template_pathname).with_suffix("").write_text(rendered)
+
+    # Copy static assets (if needed)
+    for path_src, path_src_relative in site.get_files(PathType.STATIC):
+        path_dst = PATH_BUILD.joinpath(path_src_relative)
+        if not path_dst.exists() or (
+            path_dst.exists() and path_src.stat().st_mtime > path_dst.stat().st_mtime
+        ):
+            path_dst.parent.mkdir(parents=True, exist_ok=True)
+            path_src.copy(path_dst)
+            log.debug(f"static copy: {path_dst}")

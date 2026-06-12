@@ -14,11 +14,12 @@ FROM python:alpine AS site
 
     COPY . .
     RUN make
-    #CMD [ "make" ]
 
 
 FROM nginx:alpine AS nginx
+    EXPOSE 80
     WORKDIR /usr/share/nginx/html
+
     COPY --from=site /site/build/ .
 
     RUN sed -i'' -e 's/#gzip  on;/gzip  on;  gzip_static  on;  gzip_types text\/plain text\/css application\/javascript application\/json application\/x-javascript text\/xml application\/xml application\/xml+rss text\/javascript;  gzip_vary on; /g' /etc/nginx/nginx.conf
@@ -32,4 +33,3 @@ FROM nginx:alpine AS nginx
         -or -iname '*.txt' \
         -or -iname '*.md' \
         -exec gzip -9 -k '{}' \;
-    EXPOSE 80
