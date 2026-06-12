@@ -162,7 +162,7 @@ class Site:
     def get_files(self, path_type: PathType) -> Generator[File]:
         for path in self.paths[path_type]:
             for file in path.glob("**"):
-                if file.stem.startswith("_"):
+                if file.stem.startswith("_") or not file.is_file():
                     continue
                 yield File(file, file.relative_to(path))
 
@@ -214,10 +214,7 @@ if __name__ == "__main__":
         paths={
             PathType.DATA: (PATH_SITE.joinpath("data"),),
             PathType.TEMPLATES: (PATH_SITE.joinpath("templates"),),
-            PathType.STATIC: (
-                PATH_SITE.joinpath("static"),
-                PATH_SITE.joinpath("images"),
-            ),
+            PathType.STATIC: (PATH_SITE.joinpath("static"),),
             PathType.CONTENT: (PATH_SITE.joinpath("content"),),
         }
     )
@@ -280,8 +277,9 @@ if __name__ == "__main__":
             PATH_BUILD.joinpath(template_pathname).with_suffix("").write_text(rendered)
 
     # Copy static assets (if needed)
+    PATH_STATIC = 'static'  # I don't like this hard coded output path
     for path_src, path_src_relative in site.get_files(PathType.STATIC):
-        path_dst = PATH_BUILD.joinpath(path_src_relative)
+        path_dst = PATH_BUILD.joinpath(PATH_STATIC, path_src_relative)
         if not path_dst.exists() or (
             path_dst.exists() and path_src.stat().st_mtime > path_dst.stat().st_mtime
         ):

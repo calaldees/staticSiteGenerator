@@ -5,14 +5,14 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<%include file="_og_meta.mako"/>
 
-	<title>${site.title} - ${title or ''}</title>
+	<title>${site.title}${f' - {title}' if title else ''}</title>
 	<link id="favicon" rel="shortcut icon" type="image/svg" href="${site.favicon}" />
 
-	<link rel="stylesheet" href="/static/pure-min.css">
-	<link rel="stylesheet" href="/static/grids-responsive-min.css">
-	<link rel="stylesheet" href="/static/pure-layout-blog.css"/>
+	<link rel="stylesheet" href="/static/css/pure-min.css">
+	<link rel="stylesheet" href="/static/css/grids-responsive-min.css">
+	<link rel="stylesheet" href="/static/css/pure-layout-blog.css"/>
 	<%doc>
-	<link rel="stylesheet" href="/static/pure-layout-side-menu.css"/>
+	<link rel="stylesheet" href="/static/css/pure-layout-side-menu.css"/>
 	</%doc>
 
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/default.min.css">
@@ -24,8 +24,8 @@
 	</script>
 	</%doc>
 
-	<link rel="stylesheet" href="/static/page.css"/>
-	<script src="/static/static_site.js" async></script>
+	<link rel="stylesheet" href="/static/css/page.css"/>
+	<script src="/static/js/static_site.js" async></script>
 	<%doc>
 	<script src="https://pure-css.github.io/js/ui.js" async></script>
 	</%doc>

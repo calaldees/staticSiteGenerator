@@ -2,7 +2,7 @@ site:
   url: https://ComputingTeachers.uk
   title: ComputingTeachers.uk
   tagline: Ideas and resources for teaching computing
-  favicon: /static/logo.svg
+  favicon: /static/images/logo.svg
 global_templates:
   - index.html.mako
   - authors.html.mako
