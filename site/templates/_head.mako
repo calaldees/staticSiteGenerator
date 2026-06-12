@@ -6,7 +6,7 @@
 	<%include file="_og_meta.mako"/>
 
 	<title>${site.title}${f' - {title}' if title else ''}</title>
-	<link id="favicon" rel="shortcut icon" type="image/svg" href="${site.favicon}" />
+	<link id="favicon" rel="shortcut icon" type="image/svg" href="${site.logo}" />
 
 	<link rel="stylesheet" href="/static/css/pure-min.css">
 	<link rel="stylesheet" href="/static/css/grids-responsive-min.css">

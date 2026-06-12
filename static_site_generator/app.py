@@ -6,7 +6,7 @@ import os
 import pickle
 import subprocess
 import tempfile
-from collections.abc import Generator, Mapping, Sequence
+from collections.abc import Generator, Iterator, Mapping, Sequence
 from functools import lru_cache, partial
 from hashlib import sha256
 from itertools import chain
@@ -14,8 +14,8 @@ from pathlib import Path
 from typing import Any, NamedTuple
 
 import frontmatter
-import mako
-import mako.lookup
+import mako  # type: ignore[import-untyped]
+import mako.lookup  # type: ignore[import-untyped]
 import yaml
 from dotwiz import DotWiz
 
@@ -106,8 +106,8 @@ class MetadataDB(dict[Path, Mapping]):
         self.has_changed = True
         return super().__setitem__(key, value)
 
-    def get(self, key: str | Path) -> Mapping:
-        return super().get(key) or super().get(Path(key).with_suffix(".html")) or {}
+    def get(self, key: str | Path) -> Mapping:  # type: ignore
+        return super().get(key) or super().get(Path(key).with_suffix(".html")) or {}  # type: ignore
 
     def save(self) -> None:
         if not self.has_changed:
@@ -122,19 +122,21 @@ class MetadataDB(dict[Path, Mapping]):
             data = {str(k): v for k, v in db.items()}
             json.dump(data, f, cls=JSONObjectEncoder)
 
-    def get_path_src_startswith(self, startswith: str) -> filter[Mapping]:
-        return filter(
-            lambda i: str(i["path_src"]).startswith(startswith), self.values()
-        )
-
     @property
-    def articles(self) -> Sequence[Mapping]:
+    def pages(self) -> Sequence[Mapping]:
         return sorted(
-            db.get_path_src_startswith("article"),
+            self.values(),
             key=lambda i: i.get(
                 "date", datetime.datetime.fromtimestamp(0, tz=datetime.UTC)
             ),
             reverse=True,
+        )
+
+    @property
+    def articles(self) -> Iterator[Mapping]:
+        return filter(
+            lambda page: str(page["path_src"]).startswith("article"),
+            self.pages,
         )
 
 
@@ -193,7 +195,7 @@ class Site:
         )
         try:
             return self.template_lookup.get_template(template_pathname).render(
-                **self.data(), **kwargs
+                **(self.data() | kwargs)
             )
         except Exception:
             log.error(mako.exceptions.text_error_template().render())
@@ -250,7 +252,7 @@ if __name__ == "__main__":
             }
         )
         if "email" in metadata:
-            metadata["gravatar_url"] = Gravatar.getGravatarUrl(metadata["email"])
+            metadata["gravatar_url"] = Gravatar.getGravatarUrl(str(metadata["email"]))
 
         # Render single html page
         rendered = site.render_template(html=html, **metadata)
@@ -263,7 +265,7 @@ if __name__ == "__main__":
         path_dst.write_text(rendered)
         os.utime(path_dst, (path_mtime, path_mtime))  # Output mtime should match source
 
-        db[metadata["path_dst"]] = metadata
+        db[metadata["path_dst"]] = metadata  # type: ignore[arg-type,index]
         log.info(path_dst)
 
     # Single page processing complete ------------------------------------------
@@ -271,13 +273,13 @@ if __name__ == "__main__":
     db.save()
     if db.has_changed:
         log.info("content db updated: rendering all global_templates")
-        for template_pathname in site.data().global_templates:
+        for template_pathname in site.data().global_templates:  # type: ignore
             log.info(template_pathname)
             rendered = site.render_template(template=template_pathname, db=db)
             PATH_BUILD.joinpath(template_pathname).with_suffix("").write_text(rendered)
 
     # Copy static assets (if needed)
-    PATH_STATIC = 'static'  # I don't like this hard coded output path
+    PATH_STATIC = "static"  # I don't like this hard coded output path
     for path_src, path_src_relative in site.get_files(PathType.STATIC):
         path_dst = PATH_BUILD.joinpath(PATH_STATIC, path_src_relative)
         if not path_dst.exists() or (

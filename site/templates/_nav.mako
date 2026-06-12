@@ -1,15 +1,15 @@
 <div class="sidebar pure-u-1 pure-u-md-1-4">
     <div class="header">
         <a href="/">
-            <img src="${site.favicon}" alt="${site.title} logo">
+            <img src="${site.logo}" alt="${site.title} logo">
             <h1 class="brand-title">${site.title}</h1>
             <h2 class="brand-tagline">${site.tagline}</h2>
         </a>
         <nav class="nav">
             <ul class="nav-list">
-                <li class="nav-item"><a class="pure-button" href="/authors">Authors</a></li>
-                <li class="nav-item"><a class="pure-button" href="/articles">Articles</a></li>
-                <li class="nav-item"><a class="pure-button" href="/rss.xml">RSS</a></li>
+                % for nav_item in navigation:
+                <li class="nav-item"><a class="pure-button" href="${nav_item['path']}">${nav_item['name']}</a></li>
+                % endfor
             </ul>
         </nav>
     </div>

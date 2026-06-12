@@ -1,3 +1,6 @@
+<%
+from itertools import islice
+%>
 <%include file="_head.mako"/>
 
 <%def name="render_post(item)">
@@ -39,13 +42,15 @@
 
 			<div class="posts">
 				<h1 class="content-subhead">Pinned Post</h1>
-				${render_post(db.get('articles/about'))}
+				% for article_name in index.pinned_articles:
+				${render_post(db.get(article_name))}
+				% endfor
 			</div>
 
 			<div class="posts">
 				<h1 class="content-subhead">Recent Posts</h1>
-				% for item in db.articles[:3]:
-				${render_post(item)}
+				% for article in islice(db.articles, 3):
+				${render_post(article)}
 				% endfor
 			</div>
 

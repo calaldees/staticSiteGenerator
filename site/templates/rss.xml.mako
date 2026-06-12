@@ -6,7 +6,7 @@
 	<link>${site.url}</link>
 	<description>Free web building tutorials</description>
 	<image>
-		<url>${site.favicon}</url>
+		<url>${site.logo}</url>
 		<title>${site.title}</title>
 		<link>${site.url}</link>
 	</image>

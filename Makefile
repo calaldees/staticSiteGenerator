@@ -48,6 +48,13 @@ serve_docker:
 #example:
 #	showdown makehtml --input test.md
 
+build/static/images/og_image.png:
+	"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+		--headless --screenshot --window-size=1200,630 \
+		http://localhost:8000
+	mv screenshot.png $@
+	optipng $@
+
 test:
 	uv run pytest
 clean:

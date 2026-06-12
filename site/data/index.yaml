@@ -1,9 +1,28 @@
 site:
-  url: https://ComputingTeachers.uk
-  title: ComputingTeachers.uk
-  tagline: Ideas and resources for teaching computing
-  favicon: /static/images/logo.svg
+  hostname: ComputingTeachers.uk
+  url: https://${hostname}
+  title: ${hostname}
+  tagline: Ideas and resources for teaching Computing
+  logo: /static/images/logo.svg
+  email: admin@${hostname}
+  og_image: /static/images/og_image.png
+navigation:
+  - name: Articles
+    path: /articles
+  - name: Authors
+    path: /authors
+  - name: RSS
+    path: /rss.xml
+social:
+  - name: discord
+    icon: fa-solid fa-window-maximize
+    link: https://discord.gg/nbJBEFNHZg
+index:
+  pinned_articles:
+    - articles/about
 global_templates:
   - index.html.mako
   - authors.html.mako
   - rss.xml.mako
+  - robots.txt.mako
+  - sitemap.xml.mako
