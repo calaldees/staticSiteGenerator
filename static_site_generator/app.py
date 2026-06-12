@@ -83,12 +83,13 @@ def render_markdown_to_html(markdown: str) -> str:
     """
     with tempfile.NamedTemporaryFile() as temp:
         temp.write(markdown.encode("utf8"))
+        temp.seek(0)  # flush the `write()`
         process_output = subprocess.run(
             ("node", "./myMarked", "-i", temp.name),
             capture_output=True,
         )
     if process_output.returncode:
-        raise Exception(process_output)
+        raise Exception(process_output)    
     return process_output.stdout.decode("utf8")
 
 
