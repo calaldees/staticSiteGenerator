@@ -10,8 +10,8 @@
 
 	<link rel="stylesheet" href="/static/css/pure-min.css">
 	<link rel="stylesheet" href="/static/css/grids-responsive-min.css">
-	<link rel="stylesheet" href="/static/css/pure-layout-blog.css"/>
 	<%doc>
+	<link rel="stylesheet" href="/static/css/pure-layout-blog.css"/>
 	<link rel="stylesheet" href="/static/css/pure-layout-side-menu.css"/>
 	</%doc>
 

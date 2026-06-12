@@ -1,7 +1,8 @@
-<div class="sidebar pure-u-1 pure-u-md-1-4">
-    <div class="header">
+<div class="header pure-u-1 pure-u-md-1-4">
+    ## sidebar
+    ## <div class="header">
         <a href="/">
-            <img src="${site.logo}" alt="${site.title} logo">
+            <img src="${site.logo}" alt="${site.title} logo" class="pure-img">
             <h1 class="brand-title">${site.title}</h1>
             <h2 class="brand-tagline">${site.tagline}</h2>
         </a>
@@ -12,7 +13,7 @@
                 % endfor
             </ul>
         </nav>
-    </div>
+    ## </div>
 </div>
 
 <%doc>

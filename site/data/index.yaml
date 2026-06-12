@@ -1,10 +1,10 @@
 site:
   hostname: ComputingTeachers.uk
-  url: https://${hostname}
-  title: ${hostname}
+  url: https://${site.hostname}
+  title: ${site.hostname}
   tagline: Ideas and resources for teaching Computing
   logo: /static/images/logo.svg
-  email: admin@${hostname}
+  email: admin@${site.hostname}
   og_image: /static/images/og_image.png
 navigation:
   - name: Articles
