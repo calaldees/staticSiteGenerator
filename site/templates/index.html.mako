@@ -38,7 +38,8 @@ from itertools import islice
 <div id="layout" class="pure-g">
 	<%include file="_nav.mako"/>
 
-	<div class="content pure-u-1 pure-u-md-3-4">
+	<div class="content-wrapper pure-u-1 pure-u-md-3-4">
+		<div class="content">
 
 			<div class="posts">
 				<h1 class="content-subhead">Pinned Post</h1>
@@ -63,6 +64,7 @@ from itertools import islice
 				</div>
 			</div>
 
+		</div>
 	</div>
 
 </div>
