@@ -6,7 +6,7 @@ import os
 import pickle
 import subprocess
 import tempfile
-from collections.abc import Generator, Iterator, Mapping, Sequence
+from collections.abc import Generator, Iterator, Mapping, MutableSequence, Sequence
 from functools import lru_cache, partial
 from hashlib import sha256
 from itertools import chain
@@ -153,6 +153,34 @@ class File(NamedTuple):
     relative: Path
 
 
+class SitePaths():
+    paths: Mapping[PathType, MutableSequence[Path]]
+
+    def __init__(self):
+        self.paths = {path_type:[] for path_type in PathType}
+
+    def append(self, path_str: str):
+        path_str_split = path_str.split(':')
+
+        if len(path_str_split) == 1 and (site_path:=Path(path_str_split[0])).is_dir():
+            for path_type, path in {
+                path_type: site_path.joinpath(path_type)
+                for path_type in PathType
+            }.items():
+                if not path.is_dir():
+                    # logging.debug(f'{path} is not a directory')
+                    continue
+                self.paths[path_type].insert(0, path)
+            # TODO: if logging.warning(f'no {PathType} identified in {site_path}')
+            return
+
+        if len(path_str_split) == 2 and (path:=Path(path_str_split[1])).is_dir():
+            self.paths[PathType[path_str_split[0].capitalize()]].insert(0, path)
+            return
+
+        raise ValueError(f'Unable to process {path_str}. Is this a valid path?')
+
+
 class Site:
     def __init__(self, paths: Mapping[PathType, Sequence[Path]]):
         self.paths = paths
@@ -203,29 +231,52 @@ class Site:
             return ""
 
 
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
+def get_args():
+    import argparse
+    import textwrap
 
-    PATH_BUILD = Path("./build")
+    parser = argparse.ArgumentParser(
+        description=textwrap.dedent("""
+        """),
+        epilog=textwrap.dedent("""
+        """)
+    )
+    parser.add_argument('paths', nargs='+', help='path or `PathType:path` paris', type=str)
+    parser.add_argument('--build', help='', type=Path, default=Path("./build"))
+    parser.add_argument('--nobase', help='', action="store_true")
+    parser.add_argument('--loglevel', type=int, default=logging.DEBUG)
+    args = vars(parser.parse_args())
+
+    if not args['nobase']:
+        path_base = Path(__file__).parent.parent.joinpath('base').absolute()
+        assert path_base.is_dir()
+        args['paths'].insert(0, str(path_base))
+
+    return args
+
+
+if __name__ == "__main__":
+    args = get_args()
+    logging.basicConfig(level=args['loglevel'])
+
+    site_paths = SitePaths()
+    for path in args['paths']:
+        site_paths.append(path)
+
+    PATH_BUILD = args['build']
     PATH_BUILD.mkdir(exist_ok=True)
 
-    PATH_SITE = Path("./site")
+    log.info(f'{PATH_BUILD.absolute()=}')
 
     db = MetadataDB(PATH_BUILD)
 
-    site = Site(
-        paths={
-            PathType.DATA: (PATH_SITE.joinpath("data"),),
-            PathType.TEMPLATES: (PATH_SITE.joinpath("templates"),),
-            PathType.STATIC: (PATH_SITE.joinpath("static"),),
-            PathType.CONTENT: (PATH_SITE.joinpath("content"),),
-        }
-    )
+    site = Site(paths=site_paths.paths)
 
     # Consider fastscan of source + destination files?
     for path_src, path_src_relative in site.get_files(PathType.CONTENT):
         if path_src.suffix != ".md":
             continue
+        # log.debug(path_src)
 
         path_mtime = path_src.stat().st_mtime
         path_dst = PATH_BUILD.joinpath(path_src_relative.with_suffix(".html"))

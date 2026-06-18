@@ -1,8 +1,8 @@
 DOCKER_IMAGE:=staticsite
 
 build_site:
-	${MAKE} --directory site/static/css
-	uv run --no-dev -m static_site_generator.app
+	${MAKE} --directory base/static/css
+	uv run --no-dev -m static_site_generator.app example
 # -m pdb -c continue
 
 serve: build_site
@@ -31,11 +31,11 @@ build/index.html.gz:
 		| xargs gzip -9 -k
 
 shell_docker:
-	docker build --tag ${DOCKER_IMAGE} --target site .
+	docker build --tag ${DOCKER_IMAGE} --target base .
 	docker run --rm -it ${DOCKER_IMAGE} /bin/sh
 
 build_docker: clean
-	docker build --tag ${DOCKER_IMAGE} --target site .
+	docker build --tag ${DOCKER_IMAGE} --target build .
 
 	docker create --name=${DOCKER_IMAGE}_container ${DOCKER_IMAGE}
 	docker cp ${DOCKER_IMAGE}_container:/site/build/ build/

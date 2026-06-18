@@ -1,4 +1,4 @@
-FROM python:alpine AS site
+FROM python:alpine AS base
     COPY --from=docker.io/astral/uv:latest /uv /uvx /bin/
     ENV UV_SYSTEM_PYTHON=1
     ENV UV_NO_SYNC=True
@@ -12,15 +12,20 @@ FROM python:alpine AS site
     COPY pyproject.toml .
     RUN UV_NO_SYNC=False uv sync --no-dev
 
-    COPY . .
-    RUN make
+    COPY static_site_generator ./static_site_generator/
+    COPY base ./base/
+    COPY myMarked .
 
+FROM base AS build
+    COPY example ./example/
+    COPY Makefile .
+    RUN make
 
 FROM nginx:alpine AS nginx
     EXPOSE 80
     WORKDIR /usr/share/nginx/html
 
-    COPY --from=site /site/build/ .
+    COPY --from=build /site/build/ .
 
     RUN sed -i'' -e 's/#gzip  on;/gzip  on;  gzip_static  on;  gzip_types text\/plain text\/css application\/javascript application\/json application\/x-javascript text\/xml application\/xml application\/xml+rss text\/javascript;  gzip_vary on; /g' /etc/nginx/nginx.conf
     RUN find . -type f \
