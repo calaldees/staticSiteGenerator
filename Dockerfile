@@ -18,6 +18,8 @@ FROM python:alpine AS base
 
     COPY static_site_generator ./static_site_generator/
     COPY base ./base/
+    # Download 3rd party static assets
+    RUN make --directory base/static/css
 
 FROM base AS build
     COPY example ./example/
