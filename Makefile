@@ -1,4 +1,6 @@
 DOCKER_IMAGE:=staticsite
+DOCKER_IMAGE_BUILD:=${DOCKER_IMAGE}build
+DOCKER_IMAGE_SERVE:=${DOCKER_IMAGE}serve
 
 build_site:
 	${MAKE} --directory base/static/css
@@ -35,15 +37,15 @@ shell_docker:
 	docker run --rm -it ${DOCKER_IMAGE} /bin/sh
 
 build_docker: clean
-	docker build --tag ${DOCKER_IMAGE} --target build .
+	docker build --tag ${DOCKER_IMAGE_BUILD} --target build .
 
-	docker create --name=${DOCKER_IMAGE}_container ${DOCKER_IMAGE}
-	docker cp ${DOCKER_IMAGE}_container:/site/build/ build/
-	docker rm ${DOCKER_IMAGE}_container
+	docker create --name=${DOCKER_IMAGE}_container ${DOCKER_IMAGE_BUILD}
+	docker cp ${DOCKER_IMAGE_BUILD}_container:/site/build/ build/
+	docker rm ${DOCKER_IMAGE_BUILD}_container
 
-serve_docker:
-	docker build --tag ${DOCKER_IMAGE} .
-	docker run --rm --publish 80:80 ${DOCKER_IMAGE}
+serve_docker: build_docker
+	docker build --file nginx.gzip_static.Dockerfile --tag ${DOCKER_IMAGE_SERVE} build/
+	docker run --rm --publish 80:80 ${DOCKER_IMAGE_SERVE}
 
 #example:
 #	showdown makehtml --input test.md
@@ -60,8 +62,14 @@ test:
 clean:
 	rm -rf build
 clean_all: clean
-	docker image rm ${DOCKER_IMAGE}
-	rm -rf .venv node_modules package-lock.json
+	docker image rm \
+		${DOCKER_IMAGE} \
+		${DOCKER_IMAGE_BUILD} \
+		${DOCKER_IMAGE_SERVE}
+	rm -rf \
+		.venv \
+		node_modules \
+		package-lock.json
 
 upgrade:
 	uv lock --upgrade
