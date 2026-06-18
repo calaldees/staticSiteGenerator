@@ -1,7 +1,7 @@
 ---
-title: "ComputingTeachers.uk"
+title: "Example Site"
 meta_title: ""
-description: "Ideas and Resources for Teaching Computing"
+description: "How to use the staticSiteGenerator"
 draft: false
 # template: index.html.mako
 ---

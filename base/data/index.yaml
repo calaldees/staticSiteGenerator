@@ -1,9 +1,9 @@
 site:
-  hostname: ComputingTeachers.uk
+  hostname: ExampleSite.uk
   url: https://${site.hostname}
   title: ${site.hostname}
-  tagline: Ideas and resources for teaching Computing
-  logo: /static/images/logo.svg
+  tagline: Example Site
+  logo: /static/images/placeholder.svg
   email: admin@${site.hostname}
   og_image: /static/images/og_image.png
 navigation:
@@ -16,7 +16,7 @@ navigation:
 social:
   - name: discord
     icon: fa-solid fa-window-maximize
-    link: https://discord.gg/nbJBEFNHZg
+    link: 
 index:
   pinned_articles:
     - articles/about
