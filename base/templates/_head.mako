@@ -30,5 +30,7 @@
 	<script src="https://pure-css.github.io/js/ui.js" async></script>
 	</%doc>
 
+	<%include file="_json-ld.mako"/>
+
 	<link rel="alternate" type="application/rss+xml" title="RSS" href="/rss.xml">
 </head>

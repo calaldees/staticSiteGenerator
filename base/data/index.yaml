@@ -6,6 +6,7 @@ site:
   logo: /static/images/placeholder.svg
   email: admin@${site.hostname}
   og_image: /static/images/og_image.png
+  language: en-GB
 navigation:
   - name: Articles
     path: /articles

@@ -47,3 +47,10 @@ https://github.com/mermaid-js/mermaid/tree/develop/packages/tiny
 
 
 
+Content
+-------
+
+### `JSON-LD`
+
+https://hawksley.dev/blog/json-ld-explained-for-personal-websites/
+
