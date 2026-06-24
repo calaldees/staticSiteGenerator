@@ -3,7 +3,6 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<%include file="_og_meta.mako"/>
 
 	<title>${site.title}${f' - {title}' if title else ''}</title>
 	<link id="favicon" rel="shortcut icon" type="image/svg" href="${site.logo}" />
@@ -30,7 +29,7 @@
 	<script src="https://pure-css.github.io/js/ui.js" async></script>
 	</%doc>
 
-	<%include file="_json-ld.mako"/>
-
+	<%include file="_og_meta.mako"/>
+	<script type="application/ld+json"></script>
 	<link rel="alternate" type="application/rss+xml" title="RSS" href="/rss.xml">
 </head>

@@ -3,6 +3,7 @@ site:
   url: https://${site.hostname}
   title: ${site.hostname}
   tagline: Example Site
+  description: A description of the site in more detail
   logo: /static/images/placeholder.svg
   email: admin@${site.hostname}
   og_image: /static/images/og_image.png
@@ -24,6 +25,5 @@ index:
 global_templates:
   - index.html.mako
   - authors.html.mako
-  - rss.xml.mako
   - robots.txt.mako
   - sitemap.xml.mako

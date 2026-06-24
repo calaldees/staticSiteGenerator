@@ -6,12 +6,13 @@ import os
 import pickle
 import subprocess
 import tempfile
-from collections.abc import Generator, Iterator, Mapping, MutableSequence, Sequence
+from collections.abc import Generator, Iterator, Mapping, MutableSequence, Sequence, Iterable
 from functools import lru_cache, partial
 from hashlib import sha256
 from itertools import chain
 from pathlib import Path
 from typing import Any, NamedTuple
+from xml.etree import ElementTree as xml
 
 import frontmatter
 import mako  # type: ignore[import-untyped]
@@ -89,8 +90,9 @@ def render_markdown_to_html(markdown: str) -> str:
             capture_output=True,
         )
     if process_output.returncode:
-        raise Exception(process_output)    
+        raise Exception(process_output)
     return process_output.stdout.decode("utf8")
+
 
 
 class MetadataDB(dict[Path, Mapping]):
@@ -231,6 +233,46 @@ class Site:
             return ""
 
 
+def generate_rss(db: MetadataDB, data: DotWiz) -> xml.ElementTree:
+    def _dict_to_xml_elements(d: Mapping[str, str | int | bool]) -> Generator[xml.Element]:
+        for k, v in d.items():
+            e = xml.Element(k)
+            e.text = str(v)
+            yield e
+    def _image():
+        """
+            <image>
+            <url>${site.logo}</url>
+            <title>${site.title}</title>
+            <link>${site.url}</link>
+        	</image>
+
+        % for article in db.articles:
+        <item>
+            <title>${article['title']}</title>
+            <pubDate>${article['date']}</pubDate><%doc>Thu, 27 Apr 2006</%doc>
+            <link>${article['path_dst']}</link>
+            <description>${article['description']}</description>
+            <author>${', '.join(article.get('authors', ()))}</author>
+            <category></category>
+            <%doc><enclosure url="https://www.w3schools.com/xml/rss.mp3" length="5000" type="audio/mpeg" /></%doc>
+        </item>
+        % endfor
+        """
+        pass
+    rss = xml.Element('rss')
+    channel = xml.SubElement(rss, 'channel')
+    channel.extend(_dict_to_xml_elements({
+        'language': 'en-GB',
+        'title': data.site.title,
+        'link': data.site.url,
+        'description': data.site.tagline + ' - ' + data.site.description,
+        'pubDate': 'Thu, 27 Apr 2006',
+        'ttl': 2880  # Two days in minuets
+    }))
+    return xml.ElementTree(rss)
+
+
 def get_args():
     import argparse
     import textwrap
@@ -329,6 +371,8 @@ if __name__ == "__main__":
             log.info(template_pathname)
             rendered = site.render_template(template=template_pathname, db=db)
             PATH_BUILD.joinpath(template_pathname).with_suffix("").write_text(rendered)
+        generate_rss(db, site.data()).write(PATH_BUILD.joinpath('rss.xml'), encoding="utf-8")
+
 
     # Copy static assets (if needed)
     PATH_STATIC = "static"  # I don't like this hard coded output path
