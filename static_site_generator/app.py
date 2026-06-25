@@ -240,26 +240,7 @@ def generate_rss(db: MetadataDB, data: DotWiz) -> xml.ElementTree:
             e.text = str(v)
             yield e
     def _image():
-        """
-            <image>
-            <url>${site.logo}</url>
-            <title>${site.title}</title>
-            <link>${site.url}</link>
-        	</image>
-
-        % for article in db.articles:
-        <item>
-            <title>${article['title']}</title>
-            <pubDate>${article['date']}</pubDate><%doc>Thu, 27 Apr 2006</%doc>
-            <link>${article['path_dst']}</link>
-            <description>${article['description']}</description>
-            <author>${', '.join(article.get('authors', ()))}</author>
-            <category></category>
-            <%doc><enclosure url="https://www.w3schools.com/xml/rss.mp3" length="5000" type="audio/mpeg" /></%doc>
-        </item>
-        % endfor
-        """
-        pass
+        pass  # <image><url>${site.logo}</url><title>${site.title}</title><link>${site.url}</link></image>
     rss = xml.Element('rss')
     channel = xml.SubElement(rss, 'channel')
     channel.extend(_dict_to_xml_elements({
@@ -269,7 +250,18 @@ def generate_rss(db: MetadataDB, data: DotWiz) -> xml.ElementTree:
         'description': data.site.tagline + ' - ' + data.site.description,
         'pubDate': 'Thu, 27 Apr 2006',
         'ttl': 2880  # Two days in minuets
+        # TODO: image
     }))
+    for article in db.articles:
+        item = xml.SubElement(channel, 'item')
+        item.extend(_dict_to_xml_elements({
+            'title': article['title'],
+            'pubDate': article['date'],  # date format?
+            'link': article['path_dst'],
+            'description': article['description'],
+            'author': ', '.join(article.get('authors', ())),
+            'category': '',
+        }))
     return xml.ElementTree(rss)
 
 
