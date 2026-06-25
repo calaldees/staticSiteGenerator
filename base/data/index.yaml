@@ -27,3 +27,5 @@ global_templates:
   - authors.html.mako
   - robots.txt.mako
   - sitemap.xml.mako
+rss:
+  limit: 10

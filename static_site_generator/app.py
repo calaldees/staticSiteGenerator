@@ -6,10 +6,17 @@ import os
 import pickle
 import subprocess
 import tempfile
-from collections.abc import Generator, Iterator, Mapping, MutableSequence, Sequence, Iterable
+from collections.abc import (
+    Generator,
+    Iterable,
+    Iterator,
+    Mapping,
+    MutableSequence,
+    Sequence,
+)
 from functools import lru_cache, partial
 from hashlib import sha256
-from itertools import chain
+from itertools import chain, islice
 from pathlib import Path
 from typing import Any, NamedTuple
 from xml.etree import ElementTree as xml
@@ -252,7 +259,7 @@ def generate_rss(db: MetadataDB, data: DotWiz) -> xml.ElementTree:
         'ttl': 2880  # Two days in minuets
         # TODO: image
     }))
-    for article in db.articles:
+    for article in islice(db.articles, data.rss.limit or 10):
         item = xml.SubElement(channel, 'item')
         item.extend(_dict_to_xml_elements({
             'title': article['title'],
